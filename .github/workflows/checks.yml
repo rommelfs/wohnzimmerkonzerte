@@ -10,11 +10,59 @@ jobs:
         php: ['8.2', '8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
       - name: PHP syntax
-        run: find wp-content tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
       - name: Highlight regression tests
         run: php tests/selection.php
+
+  multisite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local-test-only
+          MYSQL_DATABASE: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, curl, dom, zip, gd
+          coverage: none
+      - name: Prepare disposable WordPress Multisite
+        env:
+          RL_WP_PATH: ${{ runner.temp }}/rl-wordpress
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o "$RUNNER_TEMP/wp-cli.phar"
+          mkdir -p "$RL_WP_PATH"
+          wp() { php "$RUNNER_TEMP/wp-cli.phar" --path="$RL_WP_PATH" "$@"; }
+          wp core download --skip-content
+          wp config create --dbname=wordpress --dbuser=root --dbpass=local-test-only --dbhost=127.0.0.1:3306
+          wp config set WP_ENVIRONMENT_TYPE local
+          wp core install --url=https://network.example.test --title='RL Tests' --admin_user=testadmin --admin_password=local-test-only --admin_email=tests@example.test --skip-email
+          wp core multisite-convert --title='RL Multisite Tests'
+          wp plugin install woocommerce
+          cp -R "$GITHUB_WORKSPACE" "$RL_WP_PATH/wp-content/plugins/wohnzimmerkonzerte"
+      - name: Multisite lifecycle, isolation and WooCommerce checks
+        run: |
+          python3 tests/multisite.py \
+            --wordpress="$RUNNER_TEMP/rl-wordpress" \
+            --wp-cli="$RUNNER_TEMP/wp-cli.phar" \
+            --network-url=https://network.example.test

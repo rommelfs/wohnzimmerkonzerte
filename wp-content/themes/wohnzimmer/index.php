@@ -1,4 +1,0 @@
-<?php if (!defined('ABSPATH')) exit; get_header(); ?><main id="main" class="wrap section">
-<?php if (is_singular()): while (have_posts()): the_post(); ?><article class="prose"><h1><?php the_title(); ?></h1><?php if (has_post_thumbnail()): ?><div class="concert-image"><?php rl_image(get_the_ID()); ?></div><?php endif; ?><?php the_content(); wp_link_pages(); the_tags('<p class="tags">', ' ', '</p>'); ?></article><?php endwhile;
-elseif (have_posts()): ?><h1><?php echo is_post_type_archive('rl_concert') ? 'Konzerte & Rückblicke' : (is_home() ? 'Stories' : esc_html(get_the_archive_title())); ?></h1><div class="grid"><?php while (have_posts()): the_post(); rl_card(get_the_ID()); endwhile; ?></div><?php the_posts_pagination();
-else: ?><h1>Hier ist es noch still.</h1><p>Die gesuchte Seite ist nicht verfügbar.</p><a class="button" href="<?php echo esc_url(home_url('/')); ?>">Zur Startseite</a><?php endif; ?></main><?php get_footer(); ?>

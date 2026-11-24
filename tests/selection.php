@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../wp-content/plugins/wohnzimmer-core/selection.php';
+require __DIR__ . '/../includes/selection.php';
 $now = 1000;
 $cases = [
     'empty' => [[], null],

@@ -1,4 +1,4 @@
-<?php if (!defined('ABSPATH')) exit; get_header(); ?>
+<?php if (!defined('ABSPATH')) exit; rl_header(); ?>
 <main id="main" class="wrap section"><?php while (have_posts()): the_post(); $id = get_the_ID(); $start = function_exists('rl_timestamp') ? rl_timestamp((string)get_post_meta($id, 'rl_start', true)) : 0; $cancelled = get_post_meta($id, 'rl_cancelled', true) === '1'; ?>
 <article><p class="eyebrow"><?php echo $cancelled ? 'Konzert abgesagt' : ($start >= time() ? 'Bald im Wohnzimmer' : 'Rückblick'); ?></p><h1><?php the_title(); ?></h1>
 <div class="concert-layout"><div><div class="concert-image"><?php rl_image($id); ?></div><div class="prose"><?php the_content(); ?></div><?php the_tags('<p class="tags">', ' ', '</p>'); ?></div>
@@ -12,4 +12,4 @@ if ($cancelled): ?><p>Dieser Abend findet leider nicht statt. Bei bestehenden Bu
 <p class="price"><?php echo wp_kses_post($product->get_price_html()); ?></p><p>Tickets nach Verfügbarkeit. Die gewünschte Anzahl wählst du auf der Ticketseite.</p><a class="button" href="<?php echo esc_url($product->get_permalink()); ?>">Tickets buchen</a>
 <?php elseif ($product && !$product->is_in_stock()): ?><p class="pill">Ausverkauft</p><p>Für diesen Abend sind alle Plätze vergeben.</p>
 <?php else: ?><p>Der Ticketverkauf ist noch nicht geöffnet.</p><?php endif; ?>
-</aside></div></article><?php endwhile; ?></main><?php get_footer(); ?>
+</aside></div></article><?php endwhile; ?></main><?php rl_footer(); ?>

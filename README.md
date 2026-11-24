@@ -1,93 +1,72 @@
 # Rommelfangen Living Room Concerts
 
-WordPress-Projekt für intime Live-Konzerte. Das Repository liegt **direkt im WordPress-Hauptverzeichnis**, neben `wp-admin`, `wp-includes` und `wp-config.php`. Updates des eigenen Codes erfolgen mit `git pull --ff-only`.
+Eigenständiges WordPress-Plugin für Wohnzimmerkonzerte, nach dem Installationsprinzip von [taka-platform](https://github.com/rommelfs/taka-platform). Das Repository wird direkt nach **`wp-content/plugins/wohnzimmerkonzerte`** geklont und dort mit **`git pull --ff-only`** aktualisiert. Es funktioniert auf einer Einzelwebsite und in WordPress Multisite.
 
-## Enthalten
+## Funktionen
 
-- Eigenes responsives Theme: dunkles Grün, warme Akzente, lokale Systemschriften, keine externen Schriftanbieter.
-- Automatisch das nächste veröffentlichte, nicht abgesagte Konzert als Highlight; andernfalls das letzte Konzert. Unbekannte Termine werden ausgelassen. Ausverkaufte Konzerte bleiben sichtbar.
-- Kommende Konzerte direkt auf der Startseite, eigenes Konzertarchiv und Detailseiten.
-- Konzertmodul mit Beginn in der WordPress-Zeitzone, Einlass, öffentlicher Ortsangabe und Verknüpfung zum Ticketprodukt.
-- WooCommerce-Tickets mit eigenem Bestand je Konzert. Schutz vor Käufen für abgelaufene, abgesagte oder unveröffentlichte Konzerte.
-- Stories, Bildergalerien, selbst gehostete Videos, Tags, Gästestimmen und konfigurierbare Social-Media-Links.
-- Einbindung von WooCommerce-Rabattcodes sowie PW WooCommerce Gift Cards für echte Geschenkgutscheine mit Restguthaben.
+- Eigene Konzertverwaltung mit Beginn, Einlass, Ortsangabe und Ticketprodukt.
+- Startseite per `[rommelfangen_homepage]`: nächstes Konzert als Highlight, andernfalls letzter Abend. Kommende Konzerte, Stories und Gästestimmen direkt erreichbar.
+- Eigene responsive Vorlagen für die Konzertstartseite, Konzertdetails und das Konzertarchiv. Ein zusätzliches Konzert-Theme ist nicht erforderlich. Das vorhandene Theme gestaltet normale Beiträge, Seiten und den WooCommerce-Shop.
+- Ticketverkauf und Bestandsverwaltung über WooCommerce, PayPal Payments und Überweisung.
+- WooCommerce-Rabattcodes sowie PW WooCommerce Gift Cards für Geschenkgutscheine mit Restguthaben.
+- Galerien, Videos, Stories, Tags und Social-Media-Links. Ohne Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
+- Einstellungen, Konzerte und Ticketzuordnungen beziehen sich auf die aktuelle Website. Website-Einstellungen bleiben beim Themewechsel erhalten.
 
-Es sind bewusst keine Künstler, Termine oder Gästestimmen erfunden. Ohne echte Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
+## Installation in deiner bestehenden Multisite
 
-## Installation
+Die vollständige Anleitung einschließlich Domainzuordnung, GitHub-Zugriff, Einrichtung ohne WP-CLI und Migration steht unter **[Multisite installieren und aktualisieren](docs/MULTISITE.md)**.
 
-PHP 8.2+, WordPress 7.0+, eine WordPress-kompatible MySQL-/MariaDB-Datenbank und HTTPS für den Betrieb. WordPress und Drittanbieter-Plugins sind **nicht** im Repository enthalten.
+Voraussetzungen: Netzwerkadministrator-Zugang, SSH und Git auf dem Host, PHP 8.2+, WordPress 7.0+, MySQL/MariaDB und HTTPS. WordPress und Drittanbieter-Erweiterungen werden separat verwaltet.
 
-### Neue Website
+Nach eingerichteter Website und GitHub-Zugriff:
 
 ```sh
-git clone git@github.com:rommelfs/wohnzimmerkonzerte.git /pfad/zur/website
-cd /pfad/zur/website
-wp core download --skip-content
-wp config create --dbname=DEINE_DATENBANK --dbuser=DEIN_DB_BENUTZER --prompt=dbpass
-wp core install --url=https://DEINE-DOMAIN --title='Rommelfangen Living Room Concerts' --admin_user=DEIN_ADMIN --admin_email=DEINE_EMAIL --prompt=admin_password
+cd /pfad/zur/multisite/wp-content/plugins
+git clone git@github.com:rommelfs/wohnzimmerkonzerte.git wohnzimmerkonzerte
+cd /pfad/zur/multisite
+
+# Nur fehlende Erweiterungen installieren; bestehende Installationen weiterverwenden.
+wp plugin install woocommerce woocommerce-paypal-payments pw-woocommerce-gift-cards
+wp plugin activate woocommerce --url=https://rommelfangen.de
+wp plugin activate wohnzimmerkonzerte --url=https://rommelfangen.de
+wp plugin activate woocommerce-paypal-payments pw-woocommerce-gift-cards --url=https://rommelfangen.de
 ```
 
-WP-CLI ist optional. Alternativ dieses Repository klonen, WordPress-Dateien **ohne Überschreiben des vorhandenen `wp-content`** ergänzen und den Installationsassistenten im Browser öffnen. Mit `--skip-content` liefert WP-CLI nur die Core-Dateien.
+Im Dashboard von **rommelfangen.de** eine Seite mit `[rommelfangen_homepage]` veröffentlichen. Unter **Einstellungen → Lesen** als statische Startseite auswählen. Unter **Einstellungen → Rommelfangen Concerts** Social-Media-, Gutschein- und rechtliche Links eintragen. Das vorhandene Theme bleibt aktiv; kein Theme-Verzeichnis kopieren und keine Dateien nach dem Update synchronisieren.
 
-### Bestehende WordPress-Website
+Die Aktivierung erfolgt gezielt pro Website. Eine bewusste Netzwerkaktivierung ist ebenfalls möglich; dann ist die Konzertverwaltung auf allen Websites verfügbar. Für euren einzelnen Konzertauftritt ist die Aktivierung nur auf rommelfangen.de vorgesehen.
 
-Zuerst Dateien und Datenbank sichern. Wenn das Hauptverzeichnis schon ein Git-Repository enthält, nicht überschreiben: das bestehende Repository zuerst prüfen. Falls noch keines besteht:
-
-```sh
-cd /pfad/zum/wordpress-hauptverzeichnis
-git init
-git remote add origin git@github.com:rommelfs/wohnzimmerkonzerte.git
-git fetch origin
-git switch --track origin/main
-```
-
-Git bricht bei kollidierenden vorhandenen Dateien ab. In diesem Fall die betroffenen Dateien zuerst sichern und vergleichen. Kein erzwungenes Checkout verwenden.
-
-### Aktivieren und einrichten
+## Updates
 
 ```sh
-wp plugin install woocommerce woocommerce-paypal-payments pw-woocommerce-gift-cards --activate
-wp plugin activate wohnzimmer-core
-wp theme activate wohnzimmer
-wp option update timezone_string Europe/Berlin
-wp option update woocommerce_currency EUR
-wp option update woocommerce_manage_stock yes
-wp option update woocommerce_hold_stock_minutes 30
-wp option update woocommerce_enable_coupons yes
-wp rewrite structure '/%postname%/' --hard
-wp rewrite flush
-```
-
-Danach WooCommerce-Einrichtung im Browser abschließen, Shop-/Warenkorb-/Kassenseiten erstellen, Verkaufsländer festlegen und den Shop erst nach vollständiger Einrichtung freigeben. Für die erste Integration mit dem Gutscheinmodul klassische Warenkorb-/Kassenseiten mit `[woocommerce_cart]` und `[woocommerce_checkout]` verwenden.
-
-1. **Einstellungen → Allgemein:** Website-Titel, Zeitzone und Kontaktadresse prüfen.
-2. **WooCommerce → Einstellungen → Zahlungen:** PayPal Payments mit eurem Konto verbinden und Überweisung mit eurer Bankverbindung aktivieren.
-3. **Produkte:** Ticketprodukte anlegen; Anleitung unter [Betrieb](docs/BETRIEB.md).
-4. **Konzerte:** Beginn, Text, Bild und Ticketprodukt pflegen.
-5. **Design → Customizer → Rommelfangen Links:** Social-Media-, Gutscheinprodukt-, Impressums- und Datenschutz-URLs eintragen. Weitere Links über das Footer-Menü.
-6. **Beiträge:** Stories und Einblicke erstellen; Galerien/Video-Blöcke und Schlagwörter verwenden. Gästestimmen separat eintragen, Titel = gewünschter öffentlicher Name.
-7. Homepage auf die Website-Wurzel legen; das Theme verwendet automatisch seine Konzert-Startseite. Nicht dieselbe Seite als Startseite und Warenkorb/Kasse verwenden.
-
-## Updates mit git pull
-
-```sh
-cd /pfad/zum/wordpress-hauptverzeichnis
+cd /pfad/zur/multisite/wp-content/plugins/wohnzimmerkonzerte
 git status --short
 git pull --ff-only
 ```
 
-Versioniert werden ausschließlich unser Theme, unser Konzertmodul, Dokumentation und Tests. WordPress-Core, `wp-config.php`, `.htaccess`, Uploads, Caches, Sprachen, Drittanbieter-Plugins und die Datenbank bleiben unberührt. Inhalte und Einstellungen werden in WordPress gepflegt. Eigene Codeänderungen vorher committen; bei Konflikten stoppt `--ff-only`.
+Zuvor Dateien und Datenbank sichern, Änderungen auf der Testwebsite prüfen. Bei lokalen Codeänderungen zuerst vergleichen und committen; bei Fehlern abbrechen, keine erzwungenen Resets. Bei aktiviertem Cache anschließend den Website-Cache leeren.
 
-WordPress und installierte Drittanbieter-Plugins weiterhin über WordPress/WP-CLI aktualisieren. Änderungen zunächst auf einer Testinstallation prüfen, Dateien und Datenbank vorher sichern. Niemals `git clean -fdx` im WordPress-Verzeichnis ausführen: das würde ignorierte WordPress-Dateien und Uploads entfernen.
+Das Plugin prüft benötigte Weiterentwicklungen seiner URL-Regeln pro Website automatisch beim nächsten Laden. Nach einem normalen Update ist keine erneute Aktivierung nötig. Es verwendet keine eigenen Datenbanktabellen und verändert weder die Netzwerk-Konfiguration noch `.htaccess`.
+
+Konzerte, Bestellungen, Einstellungen, Uploads, Zugangsdaten sowie TAKA und andere Plugins liegen außerhalb dieses Repositorys. WordPress, WooCommerce und Erweiterungen weiterhin separat aktualisieren. Alle Websites, die dieses Plugin aktiv verwenden, erhalten dieselbe Codeversion.
+
+## Redaktion und Verkauf
+
+Siehe **[Betrieb, Tickets, Gutscheine und Abnahme](docs/BETRIEB.md)**. WooCommerce-Einrichtung, Zahlungskonten und echte Buchungstests vor dem Livegang abschließen. Das Plugin baut auf den vorhandenen WooCommerce-Zahlungs- und Gutschein-Erweiterungen auf; diese sind nicht im Repository enthalten.
+
+## Wechsel vom ursprünglichen Repository-Aufbau
+
+Version 1.0 lag im WordPress-Hauptverzeichnis und enthielt `wohnzimmer-core` plus das Theme `wohnzimmer`. **Bei einer bereits installierten Version 1.0 zunächst die [Migration](docs/MULTISITE.md#wechsel-von-version-10) durchführen; im alten Root-Checkout noch kein `git pull` ausführen.** Die neue Version liegt ausschließlich im Plugin-Verzeichnis. Konzertdaten und Ticketprodukt-IDs bleiben erhalten.
 
 ## Prüfung
 
 ```sh
+# Im Plugin-Repository, ohne WordPress:
 php tests/selection.php
-find wp-content/themes/wohnzimmer wp-content/plugins/wohnzimmer-core -name '*.php' -exec php -l {} \;
-# Nur auf einer separaten Testinstallation, erstellt und entfernt Testdatensätze:
-wp eval-file tests/wordpress.php
+find . -name '*.php' -not -path './vendor/*' -exec php -l {} \;
+
+# Nur auf einer isolierten WordPress-Testinstallation:
+wp eval-file wp-content/plugins/wohnzimmerkonzerte/tests/wordpress.php --url=https://rommelfangen.de
 ```
 
-GitHub Actions prüft PHP-Syntax und die zeitabhängige Highlight-Auswahl. [Betrieb und Abnahme](docs/BETRIEB.md) beschreibt die noch erforderlichen Zahlungstests vor dem Livegang. Dieses Repository enthält keine Hosting-Bereitstellung und keine verbundenen Zahlungskonten.
+GitHub Actions prüft PHP-Syntax, Highlight-Auswahl und Multisite-Isolation. Die Multisite-Testanleitung steht in [tests/MULTISITE.md](tests/MULTISITE.md). Externe Zahlungen und E-Mail-Zustellung werden dabei nicht durchgeführt.

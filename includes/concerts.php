@@ -1,14 +1,5 @@
 <?php
-/**
- * Plugin Name: Rommelfangen Concerts
- * Description: Konzertverwaltung und WooCommerce-Ticketverknüpfung für Rommelfangen Living Room Concerts.
- * Version: 1.0.0
- * Requires at least: 7.0
- * Requires PHP: 8.2
- * License: GPL-2.0-or-later
- */
 if (!defined('ABSPATH')) exit;
-require_once __DIR__ . '/selection.php';
 
 function rl_register_content(): void {
     register_post_type('rl_concert', [
@@ -33,8 +24,6 @@ function rl_register_content(): void {
     }
 }
 add_action('init', 'rl_register_content');
-register_activation_hook(__FILE__, function () { rl_register_content(); flush_rewrite_rules(); });
-register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
 
 function rl_timestamp(string $value): int {
     if (!$value) return 0;
@@ -113,13 +102,5 @@ add_filter('woocommerce_is_purchasable', static fn($ok, $p) => $ok && rl_ticket_
 add_action('woocommerce_check_cart_items', function () {
     foreach (WC()->cart->get_cart() as $item) {
         if (!rl_ticket_open($item['data'])) wc_add_notice('Ein Konzertticket ist nicht mehr verfügbar. Bitte entferne es aus dem Warenkorb.', 'error');
-    }
-});
-
-add_action('customize_register', function ($customizer) {
-    $customizer->add_section('rl_links', ['title' => 'Rommelfangen Links']);
-    foreach (['instagram' => 'Instagram', 'youtube' => 'YouTube', 'facebook' => 'Facebook', 'gift' => 'Geschenkgutschein-Produkt', 'imprint' => 'Impressum', 'privacy' => 'Datenschutz'] as $key => $label) {
-        $customizer->add_setting('rl_' . $key, ['sanitize_callback' => 'esc_url_raw']);
-        $customizer->add_control('rl_' . $key, ['label' => $label . ' URL', 'section' => 'rl_links', 'type' => 'url']);
     }
 });

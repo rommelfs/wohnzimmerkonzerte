@@ -1,6 +1,6 @@
 <?php
 // wp eval-file tests/wordpress.php — isolated test installations only.
-if (!defined('ABSPATH') || !class_exists('WooCommerce') || !function_exists('rl_events')) throw new RuntimeException('Activate WooCommerce and wohnzimmer-core first.');
+if (!defined('ABSPATH') || !class_exists('WooCommerce') || !function_exists('rl_events')) throw new RuntimeException('Activate WooCommerce and wohnzimmerkonzerte first.');
 $ids = []; $product = null; $order = null;
 $disable_mail = static fn() => true;
 add_filter('pre_wp_mail', $disable_mail);

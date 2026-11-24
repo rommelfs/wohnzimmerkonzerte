@@ -30,7 +30,7 @@ Quelle: [WooCommerce Coupons](https://woocommerce.com/document/coupon-management
 
 ## Geschenkgutscheine mit Restguthaben
 
-**PW WooCommerce Gift Cards** installieren und den Einrichtungsdialog durchlaufen. Ein Gutscheinprodukt mit euren Beträgen, z. B. 25 / 50 / 75 Euro, erstellen. Das veröffentlichte Produkt im Customizer als Geschenkgutschein-URL eintragen. Es wird nicht als Konzertticket verknüpft.
+**PW WooCommerce Gift Cards** installieren und den Einrichtungsdialog durchlaufen. Ein Gutscheinprodukt mit euren Beträgen, z. B. 25 / 50 / 75 Euro, erstellen. Das veröffentlichte Produkt unter Einstellungen → Rommelfangen Concerts als Geschenkgutschein-URL eintragen. Es wird nicht als Konzertticket verknüpft.
 
 Das Plugin verwaltet Codes, Versand und Guthaben. Ausgabe erst nach bestätigter Zahlung konfigurieren. Bei Überweisung Zahlungseingang kontrollieren und Bestellung anschließend abschließen. Nicht „bei Bestellungseingang senden“ aktivieren. E-Mail-Versand mit einem echten Postfach testen und SMTP bzw. den Versanddienst des Hosts einrichten.
 
@@ -55,8 +55,8 @@ Beiträge sind das Konzerttagebuch: Kategorien wie „Stories“ und „Behind t
 
 Automatisierte lokale Tests ersetzen weder einen echten Zahlungstest noch die Einrichtung eurer Konten.
 
-## Verifikation dieser Version
+## Verifikation
 
-Lokal geprüft mit WordPress 7.1.5, WooCommerce 11.3.1 und PHP 8.5.7. Die lokale Testdatenbank verwendet ausschließlich für den Test die offizielle SQLite-Integration; für den Betrieb ist MySQL/MariaDB vorgesehen. Highlight-Auswahl, Beginn/Zeitzone, Ticketzuordnung, Verkaufssperren sowie Bestandsabzug und Rückbuchung wurden automatisiert geprüft. Startseite und Konzertansichten wurden per HTTP abgerufen. Eine visuelle Browserprüfung sowie externe PayPal-Zahlungen, Gutscheinversand und vollständige Gutschein-Kassenabläufe sind vor dem Livegang noch erforderlich.
+Die automatisierten Prüfungen umfassen Highlight-Auswahl, Beginn/Zeitzone, Ticketzuordnung, Verkaufssperren, Bestandsabzug und Rückbuchung. Zusätzlich wird der Plugin-Aufbau in einer Multisite mit getrennten Websites geprüft; Details unter [Multisite-Tests](../tests/MULTISITE.md).
 
-PW WooCommerce Gift Cards 2.57 und PayPal Payments wurden auf der Testinstallation aktiviert. Das bestätigt die Aktivierung, ersetzt jedoch keinen vollständigen Zahlungs- oder Gutschein-Test mit euren Konten.
+Vor dem Livegang bleiben visuelle Prüfung mit eurem aktiven Theme, externe PayPal-Zahlungen, tatsächlicher Gutscheinversand und vollständige Gutschein-Kassenabläufe mit euren Konten erforderlich. Automatisierte Tests verschicken keine E-Mails und führen keine externen Zahlungen aus.

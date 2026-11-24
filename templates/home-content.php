@@ -1,6 +1,6 @@
 <?php
 if (!defined('ABSPATH')) exit;
-get_header();
+
 $events = function_exists('rl_events') ? rl_events() : [];
 $highlight = function_exists('rl_select_highlight') ? rl_select_highlight($events, time()) : null;
 $future = array_values(array_filter($events, static fn($e) => !$e['cancelled'] && $e['start'] >= time()));
@@ -23,5 +23,5 @@ usort($future, static fn($a, $b) => $a['start'] <=> $b['start']);
 <section id="stories" class="section wrap"><div class="section-heading"><div><p class="eyebrow">Vor, auf und hinter der Bühne</p><h2>Geschichten aus dem Wohnzimmer</h2></div></div>
 <?php $stories = new WP_Query(['post_type' => 'post', 'posts_per_page' => 6]); if ($stories->have_posts()): ?><div class="grid"><?php while ($stories->have_posts()): $stories->the_post(); rl_card(get_the_ID()); endwhile; ?></div><?php wp_reset_postdata(); else: ?><div class="empty"><p>Hier entsteht unser kleines Konzerttagebuch.</p><p>Fotos, Videos, Begegnungen und die Momente hinter den Kulissen.</p></div><?php endif; ?></section>
 <?php $voices = get_posts(['post_type' => 'rl_testimonial', 'numberposts' => 6]); if ($voices): ?><section class="voices section wrap"><p class="eyebrow">Was bleibt</p><h2>Stimmen aus dem Wohnzimmer</h2><div class="grid"><?php foreach ($voices as $voice): ?><figure><blockquote><?php echo wp_kses_post(wpautop($voice->post_content)); ?></blockquote><figcaption><?php echo esc_html($voice->post_title); ?></figcaption></figure><?php endforeach; ?></div></section><?php endif; ?>
-<section id="gutscheine" class="section wrap"><div class="gift"><div><p class="eyebrow">Ein Abend zum Verschenken</p><h2>Verschenke Vorfreude.</h2><p>Ein Geschenkgutschein für Musik, Begegnungen und einen Platz im Wohnzimmer.</p></div><div><?php if ($url = get_theme_mod('rl_gift')): ?><a class="button" href="<?php echo esc_url($url); ?>">Geschenkgutschein kaufen</a><?php else: ?><p>Geschenkgutscheine sind bald erhältlich.</p><?php endif; ?></div></div></section>
-</main><?php get_footer(); ?>
+<section id="gutscheine" class="section wrap"><div class="gift"><div><p class="eyebrow">Ein Abend zum Verschenken</p><h2>Verschenke Vorfreude.</h2><p>Ein Geschenkgutschein für Musik, Begegnungen und einen Platz im Wohnzimmer.</p></div><div><?php if ($url = rl_setting('gift')): ?><a class="button" href="<?php echo esc_url($url); ?>">Geschenkgutschein kaufen</a><?php else: ?><p>Geschenkgutscheine sind bald erhältlich.</p><?php endif; ?></div></div></section>
+</main>
