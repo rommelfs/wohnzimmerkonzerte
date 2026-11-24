@@ -1,0 +1,18 @@
+# Only project-owned WordPress code is versioned.
+/*
+!/.gitignore
+!/README.md
+!/docs/
+!/.github/
+!/tests/
+!/wp-content/
+/wp-content/*
+!/wp-content/themes/
+!/wp-content/plugins/
+/wp-content/themes/*
+!/wp-content/themes/wohnzimmer/
+/wp-content/plugins/*
+!/wp-content/plugins/wohnzimmer-core/
+**/.DS_Store
+**/node_modules/
+**/*.log
