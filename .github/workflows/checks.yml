@@ -26,6 +26,9 @@ jobs:
   multisite:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
     services:
       mysql:
         image: mysql:8.0
@@ -45,7 +48,7 @@ jobs:
           persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php }}
           extensions: mysqli, mbstring, curl, dom, zip, gd
           coverage: none
       - name: Prepare disposable WordPress Multisite
