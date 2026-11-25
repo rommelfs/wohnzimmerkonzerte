@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Rommelfangen Living Room Concerts
  * Description: Wohnzimmerkonzerte, Website-Vorlagen und WooCommerce-Ticketanbindung für einzelne Websites oder Multisite.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 7.0
  * Requires PHP: 8.2
  * Author: rommelfs
@@ -18,13 +18,16 @@ if (function_exists('rl_events') || get_stylesheet() === 'wohnzimmer') {
     add_action('admin_notices', static function () use ($message) { echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>'; });
     return;
 }
-define('RL_VERSION', '1.1.0');
+define('RL_VERSION', '1.2.0');
 define('RL_REWRITE_VERSION', '1');
 define('RL_PLUGIN_FILE', __FILE__);
 define('RL_PLUGIN_DIR', __DIR__ . '/');
 require_once RL_PLUGIN_DIR . 'includes/selection.php';
 require_once RL_PLUGIN_DIR . 'includes/concerts.php';
+require_once RL_PLUGIN_DIR . 'includes/site-config.php';
 require_once RL_PLUGIN_DIR . 'includes/settings.php';
+require_once RL_PLUGIN_DIR . 'includes/concert-design.php';
+require_once RL_PLUGIN_DIR . 'includes/shop.php';
 require_once RL_PLUGIN_DIR . 'includes/lifecycle.php';
 require_once RL_PLUGIN_DIR . 'includes/frontend.php';
 register_activation_hook(__FILE__, 'rl_activate');

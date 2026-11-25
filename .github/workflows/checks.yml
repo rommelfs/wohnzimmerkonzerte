@@ -18,6 +18,8 @@ jobs:
           coverage: none
       - name: PHP syntax
         run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Admin JavaScript syntax
+        run: node --check assets/admin.js
       - name: Highlight regression tests
         run: php tests/selection.php
 

@@ -119,7 +119,7 @@ Im Dashboard von rommelfangen.de:
 4. Zeitzone Europe/Berlin und gewünschte Sprache kontrollieren.
 5. Unter **Einstellungen → Permalinks** die gewünschte Struktur einstellen und speichern. Die bestehenden Multisite-Webserverregeln beibehalten.
 
-Das bisherige Theme bleibt aktiv. Das Plugin übernimmt die Darstellung ausschließlich auf Seiten mit diesem Shortcode, Konzertdetails und dem Konzertarchiv. Normale Seiten, Stories und WooCommerce-Seiten verwenden das vorhandene Theme. Kein Kopierschritt und keine Theme-Aktivierung nach einem `git pull` sind nötig.
+Das bisherige Theme bleibt aktiv. Das Plugin übernimmt die Darstellung ausschließlich auf Seiten mit diesem Shortcode, Konzertdetails und dem Konzertarchiv. Normale Seiten und Stories verwenden das vorhandene Theme. Ab Version 1.2 können Warenkorb und Kasse ebenfalls das Konzertdesign verwenden; dies ist in den Website-Einstellungen abschaltbar. Kein Kopierschritt und keine Theme-Aktivierung nach einem `git pull` sind nötig.
 
 Optional per WP-CLI; die angezeigte ID bei den folgenden Befehlen einsetzen:
 
@@ -167,3 +167,7 @@ Dieser Abschnitt betrifft nur eine bereits installierte ursprüngliche Version m
 7. Alte Codeverzeichnisse und das alte Root-Repository erst nach erfolgreicher Prüfung gezielt archivieren bzw. aus dem bisherigen Deployment nehmen. Keine pauschalen Löschbefehle im WordPress-Hauptverzeichnis verwenden. Fortan ausschließlich im neuen Plugin-Repository aktualisieren.
 
 Das neue Plugin verweigert die Aktivierung bei gleichzeitig laufendem alten Konzertmodul oder altem Konzert-Theme, um doppelte Funktionsdefinitionen zu vermeiden. Es löscht bei Deaktivierung keine Konzerte, Bestellungen, Uploads oder Einstellungen.
+
+## Gestaltung und Ticketshop ab Version 1.2
+
+Nach dem normalen `git pull` unter **Einstellungen → Rommelfangen Concerts** alle neuen Gestaltungsfelder und Startseitenbereiche bearbeiten. Bestehende Links und Konzertdaten bleiben erhalten. Die neue Konfiguration wird je Website gespeichert. Eine bestehende Startseite mit `[rommelfangen_homepage]` funktioniert weiter; der Ticketshop ist über den neuen Header-Link sofort erreichbar. Anleitung: [Website-Editor und Ticketshop](WEBSITE-EDITOR.md).

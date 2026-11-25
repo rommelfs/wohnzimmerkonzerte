@@ -6,11 +6,19 @@ Eigenständiges WordPress-Plugin für Wohnzimmerkonzerte, nach dem Installations
 
 - Eigene Konzertverwaltung mit Beginn, Einlass, Ortsangabe und Ticketprodukt.
 - Startseite per `[rommelfangen_homepage]`: nächstes Konzert als Highlight, andernfalls letzter Abend. Kommende Konzerte, Stories und Gästestimmen direkt erreichbar.
-- Eigene responsive Vorlagen für die Konzertstartseite, Konzertdetails und das Konzertarchiv. Ein zusätzliches Konzert-Theme ist nicht erforderlich. Das vorhandene Theme gestaltet normale Beiträge, Seiten und den WooCommerce-Shop.
+- Eigene responsive Vorlagen für die Konzertstartseite, Konzertdetails und das Konzertarchiv. Ein zusätzliches Konzert-Theme ist nicht erforderlich. Das vorhandene Theme gestaltet normale Beiträge und Seiten; Warenkorb und Kasse können optional das Konzertdesign verwenden.
 - Ticketverkauf und Bestandsverwaltung über WooCommerce, PayPal Payments und Überweisung.
 - WooCommerce-Rabattcodes sowie PW WooCommerce Gift Cards für Geschenkgutscheine mit Restguthaben.
 - Galerien, Videos, Stories, Tags und Social-Media-Links. Ohne Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
 - Einstellungen, Konzerte und Ticketzuordnungen beziehen sich auf die aktuelle Website. Website-Einstellungen bleiben beim Themewechsel erhalten.
+
+## Website im Backend gestalten
+
+Ab Version 1.2 unter **Einstellungen → Rommelfangen Concerts** Marke, Farben, Schriften, Bilder, Navigation und sämtliche Plugin-Beschriftungen bearbeiten. Startseitenbereiche lassen sich hinzufügen, ausblenden und per Ziehen oder Tasten sortieren. **Über uns** und **Vergangene Konzerte** sind vorbereitet. Jedes Konzert hat getrennte Design-/Bildoptionen vor und nach dem Konzertbeginn.
+
+Der eigene Ticketshop wählt den nächsten Abend bzw. das übergebene Konzert vor und verwendet einen gemeinsamen WooCommerce-Warenkorb für Tickets mehrerer Konzerte. Über **Tickets** ist er sofort erreichbar. Für eine eigene Shop-Seite `[rommelfangen_tickets]` verwenden und diese in den Einstellungen auswählen. Warenkorb und Kasse können dasselbe Konzertdesign verwenden.
+
+**[Bedienungsanleitung für Website-Editor und Ticketshop](docs/WEBSITE-EDITOR.md)**
 
 ## Installation in deiner bestehenden Multisite
 

@@ -60,3 +60,7 @@ Automatisierte lokale Tests ersetzen weder einen echten Zahlungstest noch die Ei
 Die automatisierten Prüfungen umfassen Highlight-Auswahl, Beginn/Zeitzone, Ticketzuordnung, Verkaufssperren, Bestandsabzug und Rückbuchung. Zusätzlich wird der Plugin-Aufbau in einer Multisite mit getrennten Websites geprüft; Details unter [Multisite-Tests](../tests/MULTISITE.md).
 
 Vor dem Livegang bleiben visuelle Prüfung mit eurem aktiven Theme, externe PayPal-Zahlungen, tatsächlicher Gutscheinversand und vollständige Gutschein-Kassenabläufe mit euren Konten erforderlich. Automatisierte Tests verschicken keine E-Mails und führen keine externen Zahlungen aus.
+
+## Website und konzertübergreifender Ticketshop
+
+Die Gestaltung, sortierbaren Bereiche und die neue Über-uns-Abteilung werden unter **Einstellungen → Rommelfangen Concerts** gepflegt. Jedes Konzert kann getrennte Bilder und Farben für Ankündigung und Rückblick erhalten. Der Ticketshop übernimmt den ausgewählten Abend und erlaubt Tickets mehrerer Konzerte in einem WooCommerce-Warenkorb. [Vollständige Bedienungsanleitung](WEBSITE-EDITOR.md).

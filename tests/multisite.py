@@ -74,6 +74,8 @@ try:
     check("get_option('rl_rewrite_version') === RL_REWRITE_VERSION", 'URL rules refresh without plugin reactivation after update', a)
     wp('eval-file', str(repository / 'tests/wordpress.php'), url=a)
     print('PASS: WooCommerce ticket and capacity regression tests on mapped site', flush=True)
+    print(wp('eval-file', str(repository / 'tests/editor-shop.php'), url=a), flush=True)
+    check("get_option('rl_site', null) === null", 'Editor settings remain isolated from neighboring websites', b)
 
     wp('plugin', 'activate', 'wohnzimmerkonzerte', '--network')
     network_enabled = True

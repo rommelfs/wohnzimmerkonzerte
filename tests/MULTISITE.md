@@ -16,3 +16,5 @@ Die Domain des Netzwerks muss der Testinstallation entsprechen. Die zusätzliche
 Geprüft werden gezielte Website-Aktivierung, inaktive Nachbarwebsite, Domain-Mapping und Konzert-Permalinks, Shortcode-Rendering, getrennte Konzerte/Einstellungen, automatische URL-Regeln nach einem Update, WooCommerce-Tickets mit Bestandsabzug und Rückbuchung, Netzwerkaktivierung, neue Websites und datenerhaltende Deaktivierung.
 
 GitHub Actions führt diese Prüfung mit MySQL aus. Lokale SQLite-Prüfungen dienen zusätzlich der Entwicklung; Zahlungs-/Gutschein-Anbieter werden damit nicht vollständig getestet. Visuelle Prüfung mit dem produktiven Theme und echte Sandbox-Zahlungen bleiben Teil der Abnahme.
+
+Ab Version 1.2 führt der Runner zusätzlich `tests/editor-shop.php` aus. Geprüft werden bereinigte Gestaltungsdaten (einschließlich JSON-Formularübertragung), Abschnittsreihenfolge/Sichtbarkeit, eigener Über-uns-Inhalt, getrennte Statusbilder/-farben, Shop-Vorauswahl, Ticketformular-Nonce, gemeinsamer Warenkorb, Mengenlimits, gemischte Überweisungsreservierungen, Stornierung und Verkaufssperren. Die dafür angelegten Bilder, Konzerte, Produkte und Bestellungen werden wieder entfernt.

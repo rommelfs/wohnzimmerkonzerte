@@ -1,6 +1,6 @@
-<?php if (!defined('ABSPATH')) exit; ?><!doctype html>
+<?php if (!defined('ABSPATH')) exit; $branding=rl_site(); ?><!doctype html>
 <html <?php language_attributes(); ?>><head><meta charset="<?php bloginfo('charset'); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><?php wp_head(); ?></head>
-<body <?php body_class(); ?>><?php wp_body_open(); ?>
-<a class="skip" href="#main">Zum Inhalt</a>
-<header class="site-header wrap"><a class="brand" href="<?php echo esc_url(home_url('/')); ?>">Rommelfangen<span>Living Room Concerts</span></a>
-<nav aria-label="Hauptnavigation"><a href="<?php echo esc_url(home_url('/#konzerte')); ?>">Konzerte</a><a href="<?php echo esc_url(home_url('/#stories')); ?>">Stories</a><a href="<?php echo esc_url(home_url('/#gutscheine')); ?>">Gutscheine</a><?php if (function_exists('wc_get_cart_url')): ?><a class="nav-cart" href="<?php echo esc_url(wc_get_cart_url()); ?>">Warenkorb</a><?php endif; ?></nav></header>
+<body <?php body_class(); ?>><?php wp_body_open(); ?><a class="skip" href="#main"><?php echo esc_html(rl_ui('skip')); ?></a>
+<header class="site-header wrap"><a class="brand" href="<?php echo esc_url(home_url('/')); ?>"><?php if ($branding['logo_id']) echo wp_get_attachment_image($branding['logo_id'],'medium',false,['class'=>'brand-logo']); ?><span class="brand-name"><?php echo esc_html($branding['brand']); ?></span><span><?php echo esc_html($branding['subtitle']); ?></span></a>
+<nav aria-label="Hauptnavigation"><?php foreach ($branding['navigation'] as $link) if (!empty($link['enabled']) && $link['label'] && $link['url']) echo '<a href="'.esc_url(rl_nav_url($link['url'])).'">'.esc_html($link['label']).'</a>'; ?>
+<a href="<?php echo esc_url(rl_shop_url()); ?>"><?php echo esc_html(rl_ui('nav_shop')); ?></a><?php if (function_exists('wc_get_cart_url')): ?><a class="nav-cart" href="<?php echo esc_url(wc_get_cart_url()); ?>"><?php echo esc_html(rl_ui('nav_cart')); ?></a><?php endif; ?></nav></header>

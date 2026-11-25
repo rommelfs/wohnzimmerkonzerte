@@ -1,4 +1,3 @@
-<?php if (!defined('ABSPATH')) exit; ?>
-<footer class="site-footer wrap"><div><a class="brand" href="<?php echo esc_url(home_url('/')); ?>">Rommelfangen<span>Living Room Concerts</span></a><p>Ein Wohnzimmer. Musik. Und du mittendrin.</p></div>
-<nav aria-label="Social Media und Rechtliches"><?php foreach (['instagram' => 'Instagram', 'youtube' => 'YouTube', 'facebook' => 'Facebook', 'imprint' => 'Impressum', 'privacy' => 'Datenschutz'] as $key => $label) { $url = rl_setting($key); if ($url) echo '<a href="' . esc_url($url) . '">' . esc_html($label) . '</a>'; } ?></nav>
-</footer><?php wp_footer(); ?></body></html>
+<?php if (!defined('ABSPATH')) exit; $branding=rl_site(); ?>
+<footer class="site-footer wrap"><div><a class="brand" href="<?php echo esc_url(home_url('/')); ?>"><?php if ($branding['logo_id']) echo wp_get_attachment_image($branding['logo_id'],'medium',false,['class'=>'brand-logo']); echo esc_html($branding['brand']); ?><span><?php echo esc_html($branding['subtitle']); ?></span></a><p><?php echo esc_html($branding['footer_text']); ?></p></div>
+<nav aria-label="Social Media und Rechtliches"><?php foreach (rl_link_fields() as $key=>$label) { if ($key==='gift') continue; $url=rl_setting($key); if ($url) echo '<a href="'.esc_url($url).'">'.esc_html(rl_ui($key)).'</a>'; } ?></nav></footer><?php wp_footer(); ?></body></html>
