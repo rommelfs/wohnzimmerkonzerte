@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-const RL_MAIL_SCHEMA = '1';
+const RL_MAIL_SCHEMA = '2';
 function rl_mail_table(string $name): string { global $wpdb; return $wpdb->prefix . 'rl_mail_' . $name; }
 function rl_mail_input(array $input, string $key): string { return isset($input[$key]) && is_string($input[$key]) ? wp_unslash($input[$key]) : ''; }
 function rl_mail_consent(): string { return 'Ich möchte per E-Mail über neue Wohnzimmerkonzerte informiert werden. Ich kann mich jederzeit abmelden.'; }
@@ -30,12 +30,14 @@ function rl_mail_install(): void {
     dbDelta("CREATE TABLE $campaigns (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         concert_id bigint(20) unsigned NOT NULL,
+        request_key varchar(64) DEFAULT NULL,
         subject text NOT NULL,
         body longtext NOT NULL,
         created_at bigint(20) unsigned NOT NULL,
         created_by bigint(20) unsigned NOT NULL,
         PRIMARY KEY  (id),
-        UNIQUE KEY concert_id (concert_id)
+        UNIQUE KEY request_key (request_key),
+        KEY concert (concert_id)
     ) ENGINE=InnoDB $collate;");
     dbDelta("CREATE TABLE $deliveries (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -52,6 +54,10 @@ function rl_mail_install(): void {
     foreach ([$subscribers, $campaigns, $deliveries] as $table) {
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table))) !== $table) return;
     }
+    // dbDelta adds columns/indexes but does not remove the old one-campaign-per-concert index.
+    if (!$wpdb->get_row("SHOW INDEX FROM $campaigns WHERE Key_name='request_key' AND Non_unique=0")) return;
+    $legacy_index = $wpdb->get_row("SHOW INDEX FROM $campaigns WHERE Key_name='concert_id'");
+    if ($legacy_index && $wpdb->query("ALTER TABLE $campaigns DROP INDEX concert_id") === false) return;
     update_option('rl_mail_schema', RL_MAIL_SCHEMA, false);
 }
 add_action('init', 'rl_mail_install', 21);
@@ -157,27 +163,54 @@ add_action('admin_post_nopriv_rl_mail_signup', 'rl_mail_signup');
 
 function rl_mail_campaign_content(int $id): array {
     $title = wp_specialchars_decode(get_the_title($id), ENT_QUOTES);
-    $subject = 'Neues Wohnzimmerkonzert: ' . $title;
+    $past = rl_timestamp((string)get_post_meta($id, 'rl_start', true)) <= time();
+    $subject = ($past ? 'Rückblick: ' : 'Neues Wohnzimmerkonzert: ') . $title;
     $body = $title . "\n" . rl_date(rl_timestamp((string)get_post_meta($id, 'rl_start', true))) . "\n\n"
-        . wp_specialchars_decode(wp_strip_all_tags(get_the_excerpt($id)), ENT_QUOTES) . "\n\nKonzert & Tickets:\n" . get_permalink($id);
+        . wp_specialchars_decode(wp_strip_all_tags(get_the_excerpt($id)), ENT_QUOTES) . ($past ? "\n\nKonzert & Rückblick:\n" : "\n\nKonzert & Tickets:\n") . get_permalink($id);
     return [str_replace(["\r", "\n"], ' ', $subject), $body];
 }
 function rl_mail_concert_eligible(int $id): bool {
     return get_post_type($id) === 'rl_concert' && get_post_status($id) === 'publish'
         && get_post_meta($id, 'rl_cancelled', true) !== '1'
-        && rl_timestamp((string)get_post_meta($id, 'rl_start', true)) > time();
+        && rl_timestamp((string)get_post_meta($id, 'rl_start', true)) > 0;
 }
-function rl_mail_queue(int $id) {
+function rl_mail_body(string $body): string {
+    return trim(wp_check_invalid_utf8(str_replace(["\r\n", "\r"], "\n", wp_strip_all_tags($body))));
+}
+function rl_mail_message(array $input) {
+    $subject = sanitize_text_field(rl_mail_input($input, 'subject'));
+    $body = rl_mail_body(rl_mail_input($input, 'body'));
+    if ($subject === '' || $body === '' || preg_match_all('/./u', $subject) > 200 || strlen($body) > 50000) return new WP_Error('message', 'Bitte Betreff (höchstens 200 Zeichen) und Nachricht (höchstens 50.000 Bytes) ausfüllen.');
+    return [$subject, $body];
+}
+function rl_mail_preview_signature(int $id, array $content, string $request_key): string {
+    return wp_hash(wp_json_encode([get_current_blog_id(), get_current_user_id(), $id, $content, $request_key]));
+}
+function rl_mail_queue_preview(array $input) {
+    $id = absint(rl_mail_input($input, 'concert'));
+    $content = rl_mail_message($input);
+    if (is_wp_error($content)) return $content;
+    $key = rl_mail_input($input, 'request_key');
+    if (!preg_match('/^[a-f0-9]{64}$/D', $key) || !hash_equals(rl_mail_preview_signature($id, $content, $key), rl_mail_input($input, 'preview'))) return new WP_Error('preview', 'Bitte prüfe die Nachricht erneut in der Vorschau.');
+    return rl_mail_queue($id, $content, $key);
+}
+function rl_mail_queue(int $id, ?array $content = null, string $request_key = '') {
     global $wpdb;
-    if (!rl_mail_concert_eligible($id)) return new WP_Error('concert', 'Nur veröffentlichte, kommende und nicht abgesagte Konzerte können angekündigt werden.');
-    [$subject, $body] = rl_mail_campaign_content($id);
+    if (!rl_mail_concert_eligible($id)) return new WP_Error('concert', 'Bitte ein veröffentlichtes, nicht abgesagtes Konzert mit gültigem Beginn auswählen. Vergangene Konzerte sind ebenfalls möglich.');
+    $content = $content ?? rl_mail_campaign_content($id);
+    $message = rl_mail_message(['subject' => wp_slash((string)($content[0] ?? '')), 'body' => wp_slash((string)($content[1] ?? ''))]);
+    if (is_wp_error($message)) return $message;
+    [$subject, $body] = $message;
+    // The UI supplies a fresh key per reviewed message. Reposting that form keeps the same key.
+    if ($request_key === '') $request_key = hash('sha256', wp_json_encode([$id, $message]));
+    if (!preg_match('/^[a-f0-9]{64}$/D', $request_key)) return new WP_Error('request', 'Ungültiger Versandauftrag.');
     $campaigns = rl_mail_table('campaigns'); $deliveries = rl_mail_table('deliveries'); $subscribers = rl_mail_table('subscribers');
-    if ($wpdb->get_var($wpdb->prepare("SELECT id FROM $campaigns WHERE concert_id=%d", $id))) return new WP_Error('duplicate', 'Für dieses Konzert gibt es bereits einen Versandauftrag.');
+    if ($wpdb->get_var($wpdb->prepare("SELECT id FROM $campaigns WHERE request_key=%s", $request_key))) return new WP_Error('duplicate', 'Dieser Versandauftrag wurde bereits freigegeben.');
     $wpdb->query('START TRANSACTION');
-    // Unique concert ID makes double submissions idempotent, even across requests.
-    if (!$wpdb->insert($campaigns, ['concert_id' => $id, 'subject' => $subject, 'body' => $body, 'created_at' => time(), 'created_by' => get_current_user_id()])) {
+    // Unique request key prevents duplicate handoffs without preventing later messages about the same concert.
+    if (!$wpdb->insert($campaigns, ['concert_id' => $id, 'request_key' => $request_key, 'subject' => $subject, 'body' => $body, 'created_at' => time(), 'created_by' => get_current_user_id()])) {
         $wpdb->query('ROLLBACK');
-        return new WP_Error('duplicate', 'Für dieses Konzert gibt es bereits einen Versandauftrag oder der Auftrag konnte nicht gespeichert werden.');
+        return new WP_Error('duplicate', 'Dieser Versandauftrag wurde bereits freigegeben oder konnte nicht gespeichert werden.');
     }
     $campaign = (int)$wpdb->insert_id;
     $count = $wpdb->query($wpdb->prepare("INSERT INTO $deliveries (campaign_id, subscriber_id, generation) SELECT %d, id, generation FROM $subscribers WHERE status='confirmed'", $campaign));

@@ -78,12 +78,14 @@ Unter „Mein Konto“ können Kunden ihre Anmeldung für die aktuelle Konto-Adr
 
 ### Einen Konzertversand freigeben
 
-1. Konzert mit zukünftigem Beginn veröffentlichen und den öffentlichen Auszug pflegen.
-2. Unter **Konzerte → Benachrichtigungen** das Konzert auswählen und „Vorschau anzeigen“ klicken. Die Vorschau enthält Titel, Beginn, Auszug und Konzertlink; private Ortsangaben werden nicht übernommen.
-3. Vorschau prüfen und **„Jetzt für bestätigte Empfänger freigeben“** klicken. Es wird nicht automatisch beim Veröffentlichen verschickt. Pro Konzert ist ein Auftrag möglich; doppelte Klicks erzeugen keinen zweiten Versand.
-4. Versandstatus auf derselben Seite kontrollieren. Der Inhalt wird bei Freigabe gespeichert; spätere Textänderungen verändern diesen Auftrag nicht. Abgesagte, unveröffentlichte oder inzwischen vergangene Konzerte werden beim Versand übersprungen.
+1. Ein veröffentlichtes, nicht abgesagtes Konzert mit gültigem Beginn auswählen. Kommende und vergangene Abende sind möglich; die Auswahl ist entsprechend gruppiert.
+2. Unter **Konzerte → Benachrichtigungen** das Konzert auswählen und **„Nachricht vorbereiten“** klicken. Als Vorlage dienen Titel, Beginn, öffentlicher Auszug und Konzertlink; private Ortsangaben werden nicht übernommen. Vergangene Konzerte erhalten die Betreffvorgabe „Rückblick“ statt „Neues Wohnzimmerkonzert“.
+3. **Betreff und Nachricht bearbeiten**, etwa „Fundsachen vom letzten Abend“ oder eine Nachricht mit Links zur Fotogalerie. Die Nachricht ist Klartext, keine HTML-Mail und kein Datei-Anhang. Anschließend **„Vorschau prüfen“** und danach **„Jetzt für bestätigte Empfänger freigeben“** klicken. Änderungen nach der Vorschau erfordern eine neue Vorschau. Es wird nicht automatisch beim Veröffentlichen verschickt.
+4. Versandstatus auf derselben Seite kontrollieren. Der Inhalt wird bei Freigabe gespeichert; spätere Textänderungen verändern diesen Auftrag nicht. Abgesagte oder unveröffentlichte Konzerte werden beim Versand übersprungen. Ein vergangener Beginn verhindert den Versand nicht.
 
-Die Empfängerliste umfasst die zum Freigabezeitpunkt bestätigten Adressen dieser Website. Jede Adresse erhält eine einzelne E-Mail, keine offen sichtbaren Verteiler. Neu angemeldete Empfänger erhalten keine rückwirkenden Ankündigungen. Impressums- und Datenschutzlinks unter **Einstellungen → Rommelfangen Concerts** pflegen; diese werden angehängt. Die vollständige Absenderkennzeichnung und Datenschutzerklärung für euren Betrieb prüfen.
+Für denselben Konzertabend können mehrere Nachrichten erstellt werden, zum Beispiel zuerst die Ankündigung und später Fundsachen oder Fotos. Ein doppelter Klick oder erneutes Absenden derselben Freigabe erzeugt keinen zweiten Auftrag. Eine neu geprüfte und freigegebene Nachricht ist hingegen ein eigener Versand – auch bei gleichem Text.
+
+Die Empfängerliste umfasst die zum Freigabezeitpunkt bestätigten Adressen dieser Website, sowohl Käufer als auch Interessierte mit Anmeldung. Das ausgewählte Konzert dient als Grundlage für den Text; es filtert die Empfänger nicht auf dessen Käufer. Jede Adresse erhält eine einzelne E-Mail, keine offen sichtbaren Verteiler. Neu angemeldete Empfänger erhalten keine rückwirkenden Ankündigungen. Impressums- und Datenschutzlinks unter **Einstellungen → Rommelfangen Concerts** pflegen; diese werden angehängt. Die vollständige Absenderkennzeichnung und Datenschutzerklärung für euren Betrieb prüfen.
 
 Der Versand erfolgt über WordPress-Cron in Portionen von höchstens 20 Empfängern pro Lauf, frühestens eine Minute nach Freigabe. Bei wenig Besuchern einen echten Hosting-Cron für `wp-cron.php` beziehungsweise `wp cron event run --due-now --url=…` einrichten, bei Multisite für jede aktive Konzertwebsite. Das öffentliche Anmeldeformular und `wp-admin/admin-post.php` dürfen nicht mit veralteten Formular-Nonces zwischengespeichert werden.
 
@@ -95,4 +97,6 @@ Empfängerstatus, Einwilligungstext, Anmeldequelle, Anforderungs-/Bestätigungs-
 
 Administratoren können Anmeldungen und zugehörige Versanddaten unter **Konzerte → Benachrichtigungen** löschen. Die Funktion ist außerdem an die WordPress-Werkzeuge für den Export und das Löschen personenbezogener Daten angeschlossen. Abgemeldete Adressen bleiben bis zur Löschung als Abmeldenachweis erhalten; eine für euren Betrieb passende Löschfrist festlegen. Deaktivierung entfernt keine Einwilligungsdaten. Die Tabellen gehören in eure Datenbanksicherung.
 
-Die automatisierten Integrationstests prüfen Anmeldung, Bestätigung, Abmeldung, beide Checkout-Anbindungen, Zugriffsrechte, Wiederholungen, Fehlerfälle, Datenschutzauskunft und Website-Isolation ohne echten Versand. Vor dem ersten echten Verteiler zusätzlich eine eigene Adresse anmelden, bestätigen, eine Konzertmail über euren Mailserver empfangen und wieder abmelden.
+Ab Version 1.4 wird die Datenbankstruktur beim nächsten Laden automatisch erweitert: Bestehende Empfänger, Versandaufträge und Zustände bleiben erhalten. Die frühere Begrenzung auf einen Auftrag pro Konzert entfällt.
+
+Die automatisierten Integrationstests prüfen vergangene Konzerte, bearbeitbare Nachrichten, mehrere Aufträge je Konzert, Vorschaufreigabe, die Datenbankmigration sowie Anmeldung, Bestätigung, Abmeldung, beide Checkout-Anbindungen, Zugriffsrechte, Wiederholungen, Fehlerfälle, Datenschutzauskunft und Website-Isolation ohne echten Versand. Vor dem ersten echten Verteiler zusätzlich eine eigene Adresse anmelden, bestätigen, eine Konzertmail über euren Mailserver empfangen und wieder abmelden.
