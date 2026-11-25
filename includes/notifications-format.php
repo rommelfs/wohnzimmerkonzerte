@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 function rl_mail_placeholders(): array {
-    return ['{Anrede}'=>'Hallo Anna, / ohne Namen: Hallo,', '{Name}'=>'Vor- und Nachname / ohne Namen: Musikfan', '{Vorname}'=>'Vorname / ohne Namen: Musikfan', '{Nachname}'=>'Nachname / sonst leer', '{Email}'=>'E-Mail-Adresse', '{Konzert}'=>'Konzerttitel', '{Datum}'=>'Konzertdatum', '{Uhrzeit}'=>'Konzertbeginn', '{Konzertlink}'=>'Link zum Konzert', '{Website}'=>'Name der Website', '{Websitelink}'=>'Startseite', '{Abmeldelink}'=>'Persönlicher Abmeldelink'];
+    return ['{Anrede}'=>'Hallo Anna, / ohne Namen: Hallo,', '{Name}'=>'Vor- und Nachname / ohne Namen: Musikfan', '{Vorname}'=>'Vorname / ohne Namen: Musikfan', '{Nachname}'=>'Nachname / sonst leer', '{Email}'=>'E-Mail-Adresse', '{Konzert}'=>'Konzerttitel', '{Datum}'=>'Konzertdatum', '{Uhrzeit}'=>'Konzertbeginn', '{Konzertlink}'=>'Link zum Konzert', '{Website}'=>'Name der Website', '{Websitelink}'=>'Startseite', '{Abmeldelink}'=>'Persönlicher Abmeldelink (Newsletter)', '{Bestellnummer}'=>'Bestellnummer (Bestellermails)', '{Tickets}'=>'Gebuchte Plätze (Bestellermails)', '{Adresse}'=>'Private Adresse (nur bezahlte Besteller)', '{Einlass}'=>'Einlasszeit (Bestellermails)'];
 }
 function rl_mail_html(string $html): string {
     $attributes = ['style'=>true, 'title'=>true];
@@ -75,9 +75,11 @@ function rl_mail_render(object $campaign, array $values): array {
         $html = $images->get_updated_html();
     }
     $text = $html_mode ? (($campaign->text_body ?? '') !== '' ? strtr($campaign->text_body, $values) : rl_mail_html_to_text($html)) : strtr($campaign->body, $values);
-    $notice = 'Du erhältst diese Nachricht, weil du Konzertbenachrichtigungen abonniert hast.';
-    $text .= "\n\n" . $notice . "\nAbmelden:\n" . $values['{Abmeldelink}'];
-    if ($html_mode) $html .= '<hr><p>' . esc_html($notice) . '<br><a href="' . esc_url($values['{Abmeldelink}']) . '">Konzertbenachrichtigungen abmelden</a></p>';
+    $transactional=!empty($campaign->transactional);
+    $notice = $transactional ? 'Information zu deiner Konzertbuchung. Bei Fragen antworte bitte auf diese E-Mail.' : 'Du erhältst diese Nachricht, weil du Konzertbenachrichtigungen abonniert hast.';
+    $text .= "\n\n" . $notice . ($transactional ? '' : "\nAbmelden:\n" . $values['{Abmeldelink}']);
+    if ($html_mode && !$transactional) $html .= '<hr><p>' . esc_html($notice) . '<br><a href="' . esc_url($values['{Abmeldelink}']) . '">Konzertbenachrichtigungen abmelden</a></p>';
+    if ($html_mode && $transactional) $html .= '<hr><p>'.esc_html($notice).'</p>';
     foreach (['imprint'=>'Impressum','privacy'=>'Datenschutz'] as $key=>$label) {
         if ($url = rl_setting($key)) {
             $text .= "\n$label: $url";

@@ -44,6 +44,8 @@ function rl_ticket_product(int $id) {
 }
 function rl_product_can_link(int $id, int $concert): bool {
     if (!$id) return true;
+    $remembered=(int)get_post_meta($id, '_rl_ticket_concert', true);
+    if ($remembered && $remembered !== $concert) return false;
     if (!function_exists('wc_get_product')) return false;
     $p = wc_get_product($id);
     if (!$p || !$p->is_type('simple') || !$p->is_virtual() || !$p->managing_stock() || $p->backorders_allowed()) return false;
@@ -88,10 +90,28 @@ add_action('admin_notices', function () {
 });
 
 // Also reject direct product URLs and carts created before a concert expired.
+function rl_remember_ticket(int $product_id, int $concert_id): void {
+    if ($product_id && $concert_id && !get_post_meta($product_id, '_rl_ticket_concert', true)) update_post_meta($product_id, '_rl_ticket_concert', $concert_id);
+}
+// Retain ticket identity even when the concert is unlinked, trashed or permanently deleted.
+foreach (['added_post_meta','updated_post_meta'] as $hook) add_action($hook, static function ($meta_id, $post_id, $key, $value) {
+    if ($key === 'rl_product_id' && get_post_type($post_id) === 'rl_concert') rl_remember_ticket((int)$value, (int)$post_id);
+}, 10, 4);
+add_action('before_delete_post', static function ($id) {
+    if (get_post_type($id) === 'rl_concert') rl_remember_ticket((int)get_post_meta($id, 'rl_product_id', true), (int)$id);
+});
+add_action('init', static function () {
+    if (get_option('rl_ticket_identity_version') === '1') return;
+    foreach (get_posts(['post_type'=>'rl_concert','post_status'=>['publish','draft','pending','private','future','trash'],'numberposts'=>-1]) as $event) rl_remember_ticket((int)get_post_meta($event->ID,'rl_product_id',true),(int)$event->ID);
+    update_option('rl_ticket_identity_version','1',false);
+}, 19);
 function rl_ticket_open($product): bool {
     $events = get_posts(['post_type' => 'rl_concert', 'numberposts' => -1, 'post_status' => ['publish','draft','pending','private','future'],
         'meta_key' => 'rl_product_id', 'meta_value' => $product->get_id()]);
-    if (!$events) return true; // Ordinary shop products and gift cards.
+    $remembered = (int)get_post_meta($product->get_id(), '_rl_ticket_concert', true);
+    if (!$events) return !$remembered; // Only products that have never been tickets are ordinary goods.
+    if ($remembered && (count($events) !== 1 || (int)$events[0]->ID !== $remembered)) return false;
+    rl_remember_ticket((int)$product->get_id(), (int)$events[0]->ID);
     if (count($events) !== 1) return false;
     $event = $events[0];
     return $event->post_status === 'publish' && get_post_meta($event->ID, 'rl_cancelled', true) !== '1'
@@ -104,3 +124,5 @@ add_action('woocommerce_check_cart_items', function () {
         if (!rl_ticket_open($item['data'])) wc_add_notice('Ein Konzertticket ist nicht mehr verfügbar. Bitte entferne es aus dem Warenkorb.', 'error');
     }
 });
+// A newly duplicated product is a new template, not the original concert's ticket identity.
+add_action('woocommerce_product_duplicate_before_save',static function ($duplicate) { $duplicate->delete_meta_data('_rl_ticket_concert'); });

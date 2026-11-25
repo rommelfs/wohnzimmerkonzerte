@@ -79,6 +79,9 @@ try:
     wp('eval-file', str(repository / 'tests/notifications.php'), url=a)
     print('PASS: Notification consent, queue, checkout and privacy regression tests on mapped site', flush=True)
     print(wp('eval-file', str(repository / 'tests/notifications-format.php'), url=a), flush=True)
+    print(wp('eval-file', str(repository / 'tests/operations.php'), url=a), flush=True)
+    print(wp('eval-file', str(repository / 'tests/catalogue.php'), url=a), flush=True)
+    print(wp('eval-file', str(repository / 'tests/consent.php'), url=a), flush=True)
     wp('eval', "$GLOBALS['wpdb']->insert(rl_mail_table('subscribers'), ['email'=>'isolation@example.test','status'=>'confirmed','consent'=>'test']);", url=a)
 
     wp('plugin', 'activate', 'wohnzimmerkonzerte', '--network')

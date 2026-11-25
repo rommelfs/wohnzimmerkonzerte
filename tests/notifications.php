@@ -168,7 +168,9 @@ try {
     $_POST=['email'=>['malformed'], 'consent'=>'1', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
     try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
     rl_mail_expect(rl_mail_input($_POST, 'email') === '', 'Malformed form input is rejected without a fatal error');
-    set_transient($rate_key, 5, HOUR_IN_SECONDS);
+    for($n=0;$n<6;$n++) { $_POST=['email'=>'shared-wifi-'.$n.'@example.test','consent'=>'1','rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')]; try {rl_mail_signup();} catch (RL_Mail_Test_Response $response) {} }
+    rl_mail_expect(rl_mail_subscriber('shared-wifi-5@example.test') !== null, 'Six legitimate users on the same connection can subscribe');
+    set_transient($rate_key, 120, HOUR_IN_SECONDS);
     $_POST=['email'=>'rate-limited@example.test', 'consent'=>'1', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
     try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
     rl_mail_expect(!rl_mail_subscriber('rate-limited@example.test'), 'Public signup rate limit prevents additional mail');

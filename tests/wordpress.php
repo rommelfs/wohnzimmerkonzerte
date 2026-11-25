@@ -1,6 +1,10 @@
 <?php
 // wp eval-file tests/wordpress.php — isolated test installations only.
 if (!defined('ABSPATH') || !class_exists('WooCommerce') || !function_exists('rl_events')) throw new RuntimeException('Activate WooCommerce and wohnzimmerkonzerte first.');
+// Booking-mail behavior is exercised separately in tests/operations.php.
+remove_action('woocommerce_order_status_processing','rl_booking_information');
+remove_action('woocommerce_order_status_completed','rl_booking_information');
+if (!in_array(wp_get_environment_type(),['local','development'],true)) throw new RuntimeException('Isolated development installation required.');
 $ids = []; $product = null; $order = null;
 $disable_mail = static fn() => true;
 add_filter('pre_wp_mail', $disable_mail);
@@ -40,4 +44,6 @@ try {
     if ($order) $order->delete(true);
     if ($product) $product->delete(true);
     remove_filter('pre_wp_mail', $disable_mail);
+    add_action('woocommerce_order_status_processing','rl_booking_information',10,2);
+    add_action('woocommerce_order_status_completed','rl_booking_information',10,2);
 }

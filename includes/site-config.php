@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 function rl_ui_defaults(): array {
     return [
-        'skip'=>'Zum Inhalt', 'nav_upcoming'=>'Konzerte', 'nav_stories'=>'Stories', 'nav_about'=>'Über uns', 'nav_gift'=>'Gutscheine', 'nav_shop'=>'Tickets', 'nav_cart'=>'Warenkorb',
+        'skip'=>'Zum Inhalt', 'nav_upcoming'=>'Konzerte', 'nav_stories'=>'Stories', 'nav_about'=>'Über uns', 'nav_gift'=>'Gutscheine', 'nav_shop'=>'Tickets', 'nav_cart'=>'Warenkorb', 'nav_newsletter'=>'Neuigkeiten', 'nav_account'=>'Mein Konto', 'newsletter_title'=>'Keinen Konzertabend verpassen', 'newsletter_intro'=>'Konzertankündigungen und Neuigkeiten aus unserem Wohnzimmer.', 'newsletter_button'=>'Nächsten Termin erfahren',
         'next'=>'Der nächste Abend', 'last'=>'Unser letzter Konzertabend', 'upcoming'=>'Bald im Wohnzimmer', 'past'=>'Rückblick', 'cancelled'=>'Konzert abgesagt',
         'concert_button'=>'Konzert entdecken', 'past_button'=>'Diesen Abend entdecken', 'ticket_button'=>'Tickets buchen', 'all_concerts'=>'Alle Konzerte & Rückblicke',
         'empty_upcoming'=>'Gerade ist kein Konzert angekündigt. Sobald es weitergeht, findest du hier alle Termine.', 'empty_past'=>'Hier entstehen bald unsere Rückblicke.',
@@ -23,7 +23,7 @@ function rl_ui_defaults(): array {
 }
 function rl_section_defaults(string $type, string $id = ''): array {
     $base = ['id'=>$id ?: $type, 'type'=>$type, 'enabled'=>true, 'eyebrow'=>'', 'title'=>'', 'body'=>'', 'image_id'=>0,
-        'button_label'=>'', 'button_url'=>'', 'layout'=>'split', 'background'=>'', 'color'=>'', 'accent'=>'', 'columns'=>3, 'limit'=>6];
+        'button_label'=>'', 'button_url'=>'', 'hide_empty'=>true, 'layout'=>'split', 'background'=>'', 'color'=>'', 'accent'=>'', 'columns'=>3, 'limit'=>6];
     $presets = [
         'hero'=>['eyebrow'=>'Rommelfangen · Live & ganz nah', 'title'=>'Große Musik. Kleiner Raum.', 'body'=>'Besondere Stimmen, leise Gänsehaut und Abende, die bleiben. Willkommen bei unseren Wohnzimmerkonzerten in Rommelfangen.', 'button_label'=>'Unser Wohnzimmer entdecken', 'button_url'=>'#ueber-uns'],
         'upcoming'=>['eyebrow'=>'Wir sehen uns im Wohnzimmer', 'title'=>'Die nächsten Abende'],
@@ -33,17 +33,19 @@ function rl_section_defaults(string $type, string $id = ''): array {
         'stories'=>['eyebrow'=>'Vor, auf und hinter der Bühne', 'title'=>'Geschichten aus dem Wohnzimmer'],
         'testimonials'=>['eyebrow'=>'Was bleibt', 'title'=>'Stimmen aus dem Wohnzimmer'],
         'gift'=>['eyebrow'=>'Ein Abend zum Verschenken', 'title'=>'Verschenke Vorfreude.', 'body'=>'Ein Geschenkgutschein für Musik, Begegnungen und einen Platz im Wohnzimmer.', 'button_label'=>'Geschenkgutschein kaufen'],
+        'newsletter'=>['eyebrow'=>'In Verbindung bleiben', 'title'=>'Keinen Konzertabend verpassen', 'body'=>'Konzertankündigungen und Neuigkeiten aus unserem Wohnzimmer.'],
+        'faq'=>['eyebrow'=>'Gut zu wissen', 'title'=>'Dein erster Wohnzimmerabend', 'body'=>'<p>Tickets für mehrere Abende können gemeinsam gebucht werden. Die Kasse zeigt die verfügbaren Gast- und Kontofunktionen. Datum und Einlass findest du beim jeweiligen Konzert und in deiner Buchung.</p><p>Bitte beachte die Informationen zu Anreise, Zugang und Veranstalterkontakt auf der jeweiligen Konzertseite.</p>'],
         'tickets'=>['eyebrow'=>'Live dabei', 'title'=>'Ein Ticket. Ein besonderer Abend.', 'body'=>'Finde deinen nächsten Konzertabend und buche deine Plätze.', 'button_label'=>'Zum Ticketshop'],
     ];
     return array_replace($base, $presets[$type] ?? []);
 }
 function rl_section_types(): array {
-    return ['hero'=>'Konzert-Highlight', 'upcoming'=>'Kommende Konzerte', 'past'=>'Vergangene Konzerte', 'text'=>'Freier Text / Bild', 'about'=>'Über uns', 'stories'=>'Stories', 'testimonials'=>'Gästestimmen', 'gift'=>'Geschenkgutscheine', 'tickets'=>'Ticketshop-Verweis'];
+    return ['hero'=>'Konzert-Highlight', 'upcoming'=>'Kommende Konzerte', 'past'=>'Vergangene Konzerte', 'text'=>'Freier Text / Bild', 'about'=>'Über uns', 'stories'=>'Stories', 'testimonials'=>'Gästestimmen', 'gift'=>'Geschenkgutscheine', 'tickets'=>'Ticketshop-Verweis', 'newsletter'=>'Newsletter-Anmeldung', 'faq'=>'Fragen / Hinweise'];
 }
 function rl_site_defaults(): array {
     $sections=[];
-    foreach (['hero','upcoming','text','about','past','stories','testimonials','tickets','gift'] as $type) {
-        $sections[] = rl_section_defaults($type, ['upcoming'=>'konzerte','about'=>'ueber-uns','past'=>'rueckblicke','gift'=>'gutscheine','testimonials'=>'stimmen'][$type] ?? $type);
+    foreach (['hero','upcoming','newsletter','text','about','past','stories','testimonials','tickets','gift','faq'] as $type) {
+        $sections[] = rl_section_defaults($type, ['upcoming'=>'konzerte','about'=>'ueber-uns','past'=>'rueckblicke','gift'=>'gutscheine','testimonials'=>'stimmen','newsletter'=>'benachrichtigungen','faq'=>'fragen'][$type] ?? $type);
     }
     return [
         'brand'=>'Rommelfangen', 'subtitle'=>'Living Room Concerts', 'logo_id'=>0, 'fallback_image_id'=>0,
@@ -112,6 +114,7 @@ function rl_sanitize_site($input): array {
         $base=$id; $n=2; while(isset($ids[$id])) $id=$base.'-'.$n++;
         $ids[$id]=true; $item['id']=$id; $item['enabled']=!empty($section['enabled']);
         foreach (['eyebrow','title','button_label'] as $key) $item[$key]=sanitize_text_field(is_string($section[$key] ?? null) ? $section[$key] : '');
+        $item['hide_empty']=!isset($section['hide_empty']) || !empty($section['hide_empty']);
         $item['body']=wp_kses_post(is_string($section['body'] ?? null) ? $section['body'] : '');
         $item['button_url']=rl_safe_url($section['button_url'] ?? '');
         $item['image_id']=rl_image_id($section['image_id'] ?? 0);
@@ -122,4 +125,24 @@ function rl_sanitize_site($input): array {
         $out['sections'][]=$item;
     }
     return $out;
+}
+
+// Add the movable signup once to existing layouts without resetting their content or order.
+function rl_layout_upgrade(): void {
+    if (get_option('rl_layout_version') === '2') return;
+    $site=get_option('rl_site',null);
+    if (is_array($site) && isset($site['sections']) && is_array($site['sections'])) {
+        $types=array_column($site['sections'],'type');
+        if (!in_array('newsletter',$types,true)) {
+            $position=array_search('upcoming',$types,true);
+            array_splice($site['sections'],$position===false ? min(1,count($site['sections'])) : $position+1,0,[rl_section_defaults('newsletter','benachrichtigungen')]);
+            update_option('rl_site',$site,false);
+        }
+    }
+    update_option('rl_layout_version','2',false);
+}
+add_action('init','rl_layout_upgrade',18);
+function rl_newsletter_anchor(): string {
+    foreach (rl_site()['sections'] as $section) if ($section['type']==='newsletter' && !empty($section['enabled'])) return $section['id'];
+    return '';
 }

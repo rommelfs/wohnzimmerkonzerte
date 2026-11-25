@@ -687,3 +687,7 @@ input,select,textarea {
   background: var(--surface); color: var(--ink); padding: 1.2rem; margin-block: 1.5rem; border-left: 3px solid var(--accent);
 }
 .rl-mail-signup{max-width:46rem}.rl-mail-signup input[type=email]{width:100%}.rl-mail-signup input[type=checkbox]{margin-right:.5rem;vertical-align:middle}.rl-mail-signup button{white-space:normal;text-align:left}
+
+.rl-shop-copy{padding:1.25rem}.rl-shop-concert .concert-image{margin:1rem}.rl-mobile-checkout{display:none}.rl-mail-signup input:not([type=checkbox]){width:100%}.rl-mail-signup{max-width:46rem}
+@media(max-width:600px){body.rl-shop-view{padding-bottom:6rem}.rl-shop .rl-shop-concert h2{font-size:2rem}.rl-shop .section{padding-top:1.5rem}.rl-shop-concert .concert-image{max-height:260px;overflow:hidden}.rl-shop-concert .concert-image img{max-height:260px;object-fit:cover}.rl-mobile-checkout{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem 1rem;background:var(--surface);border-top:1px solid var(--line)}.rl-mobile-checkout .button{padding:.65rem 1rem}}
+@media print{.site-header,.site-footer,.rl-mobile-checkout{display:none!important}}

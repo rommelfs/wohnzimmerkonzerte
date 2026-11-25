@@ -53,6 +53,7 @@ function rl_section_editor(array $section, string $index, bool $dynamic=false): 
     echo '<div class="rl-section-tools"><button class="button rl-move-up" type="button">Nach oben</button> <button class="button rl-move-down" type="button">Nach unten</button> <button class="button-link-delete rl-remove-section" type="button">Bereich entfernen</button></div>';
     echo '<div class="rl-fields">';
     rl_control($prefix.'[enabled]','Bereich anzeigen',$section['enabled'],'checkbox');
+    rl_control($prefix.'[hide_empty]','Leere dynamische Bereiche automatisch ausblenden',$section['hide_empty'] ?? true,'checkbox');
     rl_control($prefix.'[type]','Inhaltstyp',$section['type'],'select',rl_section_types());
     rl_control($prefix.'[id]','Sprungmarke (z. B. ueber-uns)',$section['id']);
     rl_control($prefix.'[eyebrow]','Dachzeile',$section['eyebrow']);

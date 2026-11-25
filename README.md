@@ -13,6 +13,10 @@ Eigenständiges WordPress-Plugin für Wohnzimmerkonzerte, nach dem Installations
 - Galerien, Videos, Stories, Tags und Social-Media-Links. Ohne Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
 - Einstellungen, Konzerte und Ticketzuordnungen beziehen sich auf die aktuelle Website. Website-Einstellungen bleiben beim Themewechsel erhalten.
 
+## Konzertbetrieb
+
+Ab Version 1.6: Konzertübersicht mit Gästeliste, CSV und Einlassstatus, gezielte Bestellermails, private Buchungsinformationen nach Zahlung, Überweisungsfristen, eigene Wartelisten und Kalenderdownloads. [Betriebsabläufe](docs/KONZERTBETRIEB.md) · [Arbeitskatalog und Abnahmen](docs/ARBEITSKATALOG.md).
+
 ## Website im Backend gestalten
 
 Ab Version 1.2 unter **Einstellungen → Rommelfangen Concerts** Marke, Farben, Schriften, Bilder, Navigation und sämtliche Plugin-Beschriftungen bearbeiten. Startseitenbereiche lassen sich hinzufügen, ausblenden und per Ziehen oder Tasten sortieren. **Über uns** und **Vergangene Konzerte** sind vorbereitet. Jedes Konzert hat getrennte Design-/Bildoptionen vor und nach dem Konzertbeginn.
@@ -75,7 +79,7 @@ php tests/selection.php
 find . -name '*.php' -not -path './vendor/*' -exec php -l {} \;
 
 # Nur auf einer isolierten WordPress-Testinstallation:
-wp eval-file wp-content/plugins/wohnzimmerkonzerte/tests/wordpress.php --url=https://rommelfangen.de
+wp eval-file wp-content/plugins/wohnzimmerkonzerte/tests/wordpress.php --url=https://test.example.test
 ```
 
 GitHub Actions prüft PHP-Syntax, Highlight-Auswahl und Multisite-Isolation. Die Multisite-Testanleitung steht in [tests/MULTISITE.md](tests/MULTISITE.md). Externe Zahlungen und E-Mail-Zustellung werden dabei nicht durchgeführt.

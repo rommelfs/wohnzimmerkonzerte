@@ -13,6 +13,7 @@ function rl_shop_events(): array {
 }
 function rl_shop_selection(array $events, int $requested=0): ?array {
     foreach ($events as $event) if ($event['id']===$requested) return $event;
+    foreach ($events as $event) { $product=rl_ticket_product($event['id']); if ($product && $product->is_purchasable() && $product->is_in_stock()) return $event; }
     return $events[0] ?? null;
 }
 function rl_render_shop(): string {

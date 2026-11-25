@@ -53,19 +53,19 @@ add_filter('wp_privacy_personal_data_exporters', function ($exporters) {
 function rl_mail_privacy_export(string $email, int $page = 1): array {
     global $wpdb;
     $row = rl_mail_subscriber($email);
-    if (!$row) return ['data' => [], 'done' => true];
+    $subscriber_id=$row ? (int)$row->id : 0;
     $items = [];
-    if ($page === 1) {
+    if ($page === 1 && $row) {
         $data = [];
-        foreach (['email' => 'E-Mail', 'first_name'=>'Vorname', 'last_name'=>'Nachname', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
-            $value = str_ends_with($key, '_at') ? ((int)$row->$key ? gmdate('c', (int)$row->$key) : '') : $row->$key;
+        foreach (['email' => 'E-Mail', 'first_name'=>'Vorname', 'last_name'=>'Nachname', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'pending_consent'=>'Noch nicht bestätigte Erweiterung', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
+            $value = str_ends_with($key, '_at') ? ((int)$row->$key ? gmdate('c', (int)$row->$key) : '') : (string)($row->$key ?? '');
             $data[] = ['name' => $label, 'value' => $value];
         }
         $items[] = ['group_id' => 'rl-mail', 'group_label' => 'Konzertbenachrichtigungen', 'item_id' => 'rl-mail-subscriber-' . $row->id, 'data' => $data];
     }
-    $rows = $wpdb->get_results($wpdb->prepare('SELECT d.id, d.status, c.subject FROM ' . rl_mail_table('deliveries') . ' d JOIN ' . rl_mail_table('campaigns') . ' c ON c.id=d.campaign_id WHERE d.subscriber_id=%d ORDER BY d.id LIMIT 50 OFFSET %d', $row->id, (max(1, $page) - 1) * 50));
+    $rows = $wpdb->get_results($wpdb->prepare('SELECT d.id, d.status, d.email, d.first_name, d.last_name, d.order_id, c.subject FROM ' . rl_mail_table('deliveries') . ' d JOIN ' . rl_mail_table('campaigns') . ' c ON c.id=d.campaign_id WHERE (d.subscriber_id=%d AND d.subscriber_id<>0) OR d.email=%s ORDER BY d.id LIMIT 50 OFFSET %d', $subscriber_id, strtolower(trim($email)), (max(1, $page) - 1) * 50));
     foreach ($rows as $delivery) $items[] = ['group_id' => 'rl-mail', 'group_label' => 'Konzertbenachrichtigungen', 'item_id' => 'rl-mail-delivery-' . $delivery->id,
-        'data' => [['name' => 'Betreff', 'value' => $delivery->subject], ['name' => 'Versandstatus', 'value' => $delivery->status]]];
+        'data' => [['name' => 'Betreff', 'value' => $delivery->subject], ['name' => 'Versandstatus', 'value' => $delivery->status], ['name'=>'E-Mail','value'=>$delivery->email], ['name'=>'Empfängername','value'=>trim($delivery->first_name.' '.$delivery->last_name)], ['name'=>'Bestellbezug','value'=>(string)$delivery->order_id]]];
     return ['data' => $items, 'done' => count($rows) < 50];
 }
 function rl_mail_delete(int $id): void {
@@ -79,7 +79,8 @@ add_filter('wp_privacy_personal_data_erasers', function ($erasers) {
     $erasers['rl-concert-notifications'] = ['eraser_friendly_name' => 'Konzertbenachrichtigungen', 'callback' => function ($email, $page = 1) {
         $row = rl_mail_subscriber($email);
         if ($row) rl_mail_delete((int)$row->id);
-        return ['items_removed' => (bool)$row, 'items_retained' => false, 'messages' => [], 'done' => true];
+        global $wpdb; $buyer_rows=$wpdb->delete(rl_mail_table('deliveries'),['email'=>strtolower(trim($email))]);
+        return ['items_removed' => (bool)$row || (bool)$buyer_rows, 'items_retained' => false, 'messages' => [], 'done' => true];
     }];
     return $erasers;
 });

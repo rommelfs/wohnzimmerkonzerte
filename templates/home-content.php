@@ -8,6 +8,7 @@ $heading_count=0;
 ?>
 <main id="main">
 <?php foreach (rl_site()['sections'] as $section): if (empty($section['enabled'])) continue;
+    if (!rl_section_visible($section)) continue;
     $heading=++$heading_count===1 ? 'h1' : 'h2';
     $type=$section['type']; $style=$section; $layout=$section['layout'];
     if ($type==='hero' && $highlight) {
@@ -24,15 +25,16 @@ $heading_count=0;
         <<?php echo $heading; ?>><?php echo esc_html(get_the_title($id)); ?></<?php echo $heading; ?>><p class="lead"><?php echo esc_html(get_the_excerpt($id)); ?></p>
         <p class="date"><?php echo esc_html(rl_date($highlight['start'])); ?></p>
         <div class="button-row"><a class="button" href="<?php echo esc_url(get_permalink($id)); ?>"><?php echo esc_html(rl_ui($upcoming?'concert_button':'past_button')); ?></a>
-        <?php if ($upcoming): ?><a class="button secondary" href="<?php echo esc_url(rl_shop_url($id)); ?>"><?php echo esc_html(rl_ui('ticket_button')); ?></a><?php endif; ?></div>
+        <?php $hero_product=rl_ticket_product($id); if ($upcoming && $hero_product && $hero_product->is_purchasable() && $hero_product->is_in_stock()): ?><a class="button secondary" href="<?php echo esc_url(rl_shop_url($id)); ?>"><?php echo esc_html(rl_ui('ticket_button')); ?></a><?php endif; ?><?php if (!$upcoming && ($anchor=rl_newsletter_anchor())): ?><a class="button secondary" href="<?php echo esc_url(home_url('/#'.$anchor)); ?>"><?php echo esc_html(rl_ui('newsletter_button')); ?></a><?php endif; ?></div>
     <?php else: ?>
-        <<?php echo $heading; ?>><?php echo esc_html($section['title']); ?></<?php echo $heading; ?>><div class="lead"><?php rl_rich_text($section['body']); ?></div><?php rl_section_button($section); ?>
+        <<?php echo $heading; ?>><?php echo esc_html($section['title']); ?></<?php echo $heading; ?>><div class="lead"><?php rl_rich_text($section['body']); ?></div><?php if ($anchor=rl_newsletter_anchor()): ?><p><a class="button secondary" href="<?php echo esc_url(home_url('/#'.$anchor)); ?>"><?php echo esc_html(rl_ui('newsletter_button')); ?></a></p><?php endif; ?><?php rl_section_button($section); ?>
     <?php endif; ?></div>
     <div class="hero-visual"><?php rl_image($highlight['id'] ?? 0,'large',(int)$section['image_id']); ?><span class="image-caption"><?php echo esc_html(rl_ui('image_caption')); ?></span></div></div>
 <?php else: ?>
-    <div class="section-heading"><div><p class="eyebrow"><?php echo esc_html($section['eyebrow']); ?></p><<?php echo $heading; ?>><?php echo esc_html($section['title']); ?></<?php echo $heading; ?></div>
+    <div class="section-heading"><div><p class="eyebrow"><?php echo esc_html($section['eyebrow']); ?></p><<?php echo $heading; ?>><?php echo esc_html($section['title']); ?></<?php echo $heading; ?>></div>
     <?php if (in_array($type,['upcoming','past'],true)): ?><a href="<?php echo esc_url(get_post_type_archive_link('rl_concert')); ?>"><?php echo esc_html(rl_ui('all_concerts')); ?></a><?php endif; ?></div>
-    <?php if (in_array($type,['text','about','gift','tickets'],true)): ?>
+    <?php if ($type==='newsletter'): ?><div class="prose"><?php rl_rich_text($section['body']); ?></div><?php echo rl_mail_signup_form(); ?>
+    <?php elseif (in_array($type,['text','about','gift','tickets','faq'],true)): ?>
         <div class="content-split <?php echo $section['image_id'] ? '' : 'without-image'; ?>"><div class="prose"><?php rl_rich_text($section['body']); ?>
         <?php if ($type==='gift') { rl_section_button($section,rl_setting('gift')); if (!$section['button_url'] && !rl_setting('gift')) echo '<p>'.esc_html(rl_ui('gift_pending')).'</p>'; }
         elseif ($type==='tickets') rl_section_button($section,rl_shop_url()); else rl_section_button($section); ?></div>
@@ -51,5 +53,4 @@ $heading_count=0;
 <?php endif; ?>
 </div></section>
 <?php endforeach; ?>
-<section id="benachrichtigungen" class="section wrap"><h2>Keinen Konzertabend verpassen</h2><p>Wir informieren dich, wenn neue Wohnzimmerkonzerte angekündigt werden.</p><?php echo rl_mail_signup_form(); ?></section>
 </main>

@@ -85,7 +85,7 @@ add_action('wp_enqueue_scripts',function () {
     wp_enqueue_style('rl-concerts',plugins_url('assets/frontend.css',RL_PLUGIN_FILE),[],RL_VERSION);
     wp_add_inline_style('rl-concerts',rl_design_css());
 },100);
-add_filter('body_class',function ($classes) { if (rl_is_concert_view()) $classes[]='rl-concert-view'; return $classes; });
+add_filter('body_class',function ($classes) { if (rl_is_concert_view()) $classes[]='rl-concert-view'; if (rl_is_ticket_shop()) $classes[]='rl-shop-view';return $classes; });
 function rl_section_button(array $section, string $fallback=''): void {
     $url=$section['button_url'] ?: $fallback;
     if ($section['button_label'] && $url) echo '<a class="button" href="'.esc_url(rl_nav_url($url)).'">'.esc_html($section['button_label']).'</a>';
@@ -98,3 +98,24 @@ add_filter('document_title_parts',function ($parts) {
     elseif (is_post_type_archive('rl_concert')) $parts['title']=rl_ui('archive_title');
     return $parts;
 });
+
+add_filter('woocommerce_enable_order_notes_field', static fn($enabled)=>function_exists('WC') && WC()->cart && !WC()->cart->needs_shipping() ? false : $enabled);
+function rl_section_visible(array $section): bool {
+    if (empty($section['enabled'])) return false;
+    if (empty($section['hide_empty'] ?? true)) return true;
+    return match ($section['type']) {
+        'upcoming'=>count(array_filter(rl_events(),static fn($e)=>!$e['cancelled'] && $e['start']>=time()))>0,
+        'past'=>count(array_filter(rl_events(),static fn($e)=>!$e['cancelled'] && $e['start']>0 && $e['start']<time()))>0,
+        'stories'=>(bool)get_posts(['post_type'=>'post','numberposts'=>1]),
+        'testimonials'=>(bool)get_posts(['post_type'=>'rl_testimonial','numberposts'=>1]),
+        'gift'=>!empty($section['button_url']) || rl_setting('gift')!=='',
+        default=>true,
+    };
+}
+function rl_nav_link_visible(string $url): bool {
+    if (!str_starts_with($url,'#')) return true;
+    $id=substr($url,1);
+    foreach (rl_site()['sections'] as $section) if ($section['id']===$id) return rl_section_visible($section);
+    // Preserve custom in-text anchors, but avoid dangling links to removed built-in sections.
+    return !in_array($id,array_column(rl_site_defaults()['sections'],'id'),true);
+}

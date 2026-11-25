@@ -28,7 +28,7 @@ Mit **Eigenes Design auch für Warenkorb und Kasse verwenden** erhalten auch die
 
 ## Startseitenbereiche
 
-Vorbereitet sind Konzert-Highlight, kommende Konzerte, freier Text/Bildbereich, Über uns, Rückblicke, Stories, Gästestimmen, Ticketshop-Verweis und Geschenkgutscheine.
+Seit Version 1.6 sind Newsletter-Anmeldung und FAQ/Hinweise eigene sortierbare Bereiche. Leere dynamische Listen lassen sich automatisch ausblenden. Vorbereitet sind Konzert-Highlight, kommende Konzerte, freier Text/Bildbereich, Über uns, Rückblicke, Stories, Gästestimmen, Ticketshop-Verweis und Geschenkgutscheine.
 
 1. Bereich aufklappen und Texte/Bilder ändern.
 2. Über den Griff ziehen oder mit **Nach oben / Nach unten** verschieben. Beides verändert die Reihenfolge auf der Startseite.
