@@ -80,7 +80,7 @@ Unter „Mein Konto“ können Kunden ihre Anmeldung für die aktuelle Konto-Adr
 
 1. Ein veröffentlichtes, nicht abgesagtes Konzert mit gültigem Beginn auswählen. Kommende und vergangene Abende sind möglich; die Auswahl ist entsprechend gruppiert.
 2. Unter **Konzerte → Benachrichtigungen** das Konzert auswählen und **„Nachricht vorbereiten“** klicken. Als Vorlage dienen Titel, Beginn, öffentlicher Auszug und Konzertlink; private Ortsangaben werden nicht übernommen. Vergangene Konzerte erhalten die Betreffvorgabe „Rückblick“ statt „Neues Wohnzimmerkonzert“.
-3. **Betreff und Nachricht bearbeiten**, etwa „Fundsachen vom letzten Abend“ oder eine Nachricht mit Links zur Fotogalerie. Die Nachricht ist Klartext, keine HTML-Mail und kein Datei-Anhang. Anschließend **„Vorschau prüfen“** und danach **„Jetzt für bestätigte Empfänger freigeben“** klicken. Änderungen nach der Vorschau erfordern eine neue Vorschau. Es wird nicht automatisch beim Veröffentlichen verschickt.
+3. **Betreff und Nachricht bearbeiten**, etwa „Fundsachen vom letzten Abend“ oder eine Nachricht mit Fotos. Standard ist **HTML mit Textalternative**: Im WordPress-Editor formatieren, Links setzen und über **Dateien hinzufügen** Bilder aus der Mediathek einfügen. Bilder werden über ihre öffentliche URL geladen; die Dateien müssen für die Empfänger erreichbar sein. Die Textalternative wird automatisch aus HTML erstellt und enthält auch Linkziele sowie Bildbeschreibungen/-URLs. Das optionale Feld **Textalternative** erlaubt einen eigenen Text. **Nur Text** bleibt ebenfalls möglich. Anschließend **„Vorschau prüfen“** und danach **„Jetzt für bestätigte Empfänger freigeben“** klicken. Änderungen nach der Vorschau erfordern eine neue Vorschau. Es wird nicht automatisch beim Veröffentlichen verschickt.
 4. Versandstatus auf derselben Seite kontrollieren. Der Inhalt wird bei Freigabe gespeichert; spätere Textänderungen verändern diesen Auftrag nicht. Abgesagte oder unveröffentlichte Konzerte werden beim Versand übersprungen. Ein vergangener Beginn verhindert den Versand nicht.
 
 Für denselben Konzertabend können mehrere Nachrichten erstellt werden, zum Beispiel zuerst die Ankündigung und später Fundsachen oder Fotos. Ein doppelter Klick oder erneutes Absenden derselben Freigabe erzeugt keinen zweiten Auftrag. Eine neu geprüfte und freigegebene Nachricht ist hingegen ein eigener Versand – auch bei gleichem Text.
@@ -91,12 +91,39 @@ Der Versand erfolgt über WordPress-Cron in Portionen von höchstens 20 Empfäng
 
 „An Mailserver übergeben“ bedeutet, dass `wp_mail()` Erfolg gemeldet hat; dies ist kein Zustellnachweis. Fehlgeschlagene Übergaben werden nach mindestens fünf Minuten höchstens dreimal versucht. Bei einem Prozessabbruch bleibt eine Übergabe möglicherweise unklar: Nach 15 Minuten wird sie entsprechend markiert und nicht automatisch wiederholt. Solche Fälle und Rückläufer anhand der Serverprotokolle prüfen. Automatische Bounce-Verarbeitung gehört nicht zu dieser Funktion; dauerhaft unzustellbare Adressen in der Empfängerverwaltung entfernen. Ein deaktiviertes Plugin verschickt nichts; nach Reaktivierung werden wartende Aufträge wieder eingeplant.
 
+### Absender einstellen
+
+Unter **Konzerte → Benachrichtigungen → Absender der Konzertmails** den **Absendernamen** und die **Absenderadresse** speichern. Damit lässt sich die WordPress-Vorgabe wie `wordpress@kan.so` für dieses Modul ersetzen. Beispielsweise könnt ihr „Rommelfangen Konzerte“ und eure tatsächlich verwendete Konzert-Mailadresse eintragen. Leere Felder übernehmen die WordPress-Vorgabe. Eine ungültige Adresse überschreibt keine bisher gültige Einstellung.
+
+Die Einstellung gilt pro Website für Anmeldebestätigungen und Konzertnachrichten. Andere WordPress- und WooCommerce-Mails behalten ihre vorhandenen Einstellungen. Der Versandweg bleibt `wp_mail()` mit eurem serverseitig eingerichteten Mailserver. Die verwendete Absenderadresse muss dort zugelassen sein.
+
+### Platzhalter und persönliche Vorschau
+
+Platzhalter funktionieren im Betreff, im HTML-/Textinhalt und in einer eigenen Textalternative. Link-Platzhalter können im Editor als Linkziel eingetragen werden, zum Beispiel `{Konzertlink}`. Die Vorschau zeigt eine Beispielperson (Anna Muster) und eine beispielhafte Abmeldeadresse. Beim Versand werden die Werte für jeden Empfänger getrennt eingesetzt. Der persönliche Abmeldelink bleibt zusätzlich immer im automatisch angehängten Footer enthalten.
+
+| Platzhalter | Inhalt / Ersatz bei fehlenden Daten |
+| --- | --- |
+| `{Anrede}` | „Hallo Anna,“ beziehungsweise „Hallo,“ |
+| `{Name}` | Vor- und Nachname, sonst „Musikfan“ |
+| `{Vorname}` | Vorname, sonst „Musikfan“ |
+| `{Nachname}` | Nachname, sonst leer |
+| `{Email}` | Empfängeradresse |
+| `{Konzert}` | Konzerttitel |
+| `{Datum}` / `{Uhrzeit}` | Beginn in der Zeitzone der Website |
+| `{Konzertlink}` | Link zum Konzert |
+| `{Website}` / `{Websitelink}` | Website-Name / Startseite |
+| `{Abmeldelink}` | Persönlicher Abmeldelink |
+
+Interessierte können im Anmeldeformular optional Vor- und Nachnamen angeben. Beim Checkout werden die Rechnungsnamen übernommen; bei einer Anmeldung im Kundenkonto die Kontonamen. Bereits bestätigte Profile werden durch eine erneute anonyme Anmeldung nicht überschrieben. Für ältere Anmeldungen ohne Namen werden vorhandene Kontonamen auf derselben Website beziehungsweise die Rechnungsnamen der letzten bezahlten Bestellung verwendet. Fehlen diese ebenfalls, gelten die neutralen Ersatzwerte. Es werden keine Anreden wie Herr/Frau aus Namen abgeleitet. Nicht aufgeführte Platzhalter werden nicht ersetzt.
+
+HTML-Mails und Anmeldebestätigungen werden als echte `multipart/alternative`-Nachrichten mit HTML- und Klartextteil versendet. Ob ein Mailprogramm HTML oder Text anzeigt, richtet sich nach dessen Einstellungen. Skripte, eingebettete Formulare und unsichere Linkprotokolle werden nicht übernommen.
+
 ### Datenhaltung
 
-Empfängerstatus, Einwilligungstext, Anmeldequelle, Anforderungs-/Bestätigungs-/Abmeldezeitpunkt und Versandstatus liegen in drei eigenen Datenbanktabellen mit dem Tabellenpräfix der jeweiligen Website (`rl_mail_subscribers`, `rl_mail_campaigns`, `rl_mail_deliveries`). Bestätigungstokens werden nur als Hash gespeichert. Abmeldelinks sind durch WordPress-Schlüssel gesichert; nach einem Wechsel dieser Schlüssel werden neue Links benötigt.
+Optionale Vor-/Nachnamen, Empfängerstatus, Einwilligungstext, Anmeldequelle, Anforderungs-/Bestätigungs-/Abmeldezeitpunkt und Versandstatus liegen in drei eigenen Datenbanktabellen mit dem Tabellenpräfix der jeweiligen Website (`rl_mail_subscribers`, `rl_mail_campaigns`, `rl_mail_deliveries`). Bestätigungstokens werden nur als Hash gespeichert. Abmeldelinks sind durch WordPress-Schlüssel gesichert; nach einem Wechsel dieser Schlüssel werden neue Links benötigt.
 
 Administratoren können Anmeldungen und zugehörige Versanddaten unter **Konzerte → Benachrichtigungen** löschen. Die Funktion ist außerdem an die WordPress-Werkzeuge für den Export und das Löschen personenbezogener Daten angeschlossen. Abgemeldete Adressen bleiben bis zur Löschung als Abmeldenachweis erhalten; eine für euren Betrieb passende Löschfrist festlegen. Deaktivierung entfernt keine Einwilligungsdaten. Die Tabellen gehören in eure Datenbanksicherung.
 
-Ab Version 1.4 wird die Datenbankstruktur beim nächsten Laden automatisch erweitert: Bestehende Empfänger, Versandaufträge und Zustände bleiben erhalten. Die frühere Begrenzung auf einen Auftrag pro Konzert entfällt.
+Ab Version 1.5 wird die Datenbankstruktur beim nächsten Laden automatisch um Namens- und Formatfelder erweitert: Bestehende Empfänger, Versandaufträge und Zustände bleiben erhalten. Bereits gespeicherte Textaufträge behalten ihr Textformat. Die seit Version 1.4 mögliche mehrfache Benachrichtigung pro Konzert bleibt erhalten.
 
-Die automatisierten Integrationstests prüfen vergangene Konzerte, bearbeitbare Nachrichten, mehrere Aufträge je Konzert, Vorschaufreigabe, die Datenbankmigration sowie Anmeldung, Bestätigung, Abmeldung, beide Checkout-Anbindungen, Zugriffsrechte, Wiederholungen, Fehlerfälle, Datenschutzauskunft und Website-Isolation ohne echten Versand. Vor dem ersten echten Verteiler zusätzlich eine eigene Adresse anmelden, bestätigen, eine Konzertmail über euren Mailserver empfangen und wieder abmelden.
+Die automatisierten Integrationstests prüfen MIME-Nachrichten mit HTML und Textalternative, Personalisierung, Absenderisolation, vergangene Konzerte, bearbeitbare Nachrichten, mehrere Aufträge je Konzert, Vorschaufreigabe, die Datenbankmigration sowie Anmeldung, Bestätigung, Abmeldung, beide Checkout-Anbindungen, Zugriffsrechte, Wiederholungen, Fehlerfälle, Datenschutzauskunft und Website-Isolation ohne echten Versand. Vor dem ersten echten Verteiler zusätzlich eine eigene Adresse anmelden, bestätigen, eine Konzertmail über euren Mailserver empfangen und wieder abmelden.

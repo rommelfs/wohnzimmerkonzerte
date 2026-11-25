@@ -138,11 +138,12 @@ try {
     rl_mail_expect(count($messages) === $count+1, 'Concurrent/reentrant workers claim each recipient only once');
 
     $order = wc_create_order(); $orders[] = $order;
-    $order->set_billing_email('block@example.test');
+    $order->set_billing_email('block@example.test'); $order->set_billing_first_name('Anna'); $order->set_billing_last_name('Muster');
     $checkout_fields = Automattic\WooCommerce\Blocks\Package::container()->get(Automattic\WooCommerce\Blocks\Domain\Services\CheckoutFields::class);
     $checkout_fields->persist_field_for_order('rommelfangen/concert-notifications', true, $order, 'other', false); $order->save();
     do_action('woocommerce_store_api_checkout_order_processed', $order);
     rl_mail_expect(rl_mail_subscriber('block@example.test')->status === 'pending', 'Checkout Blocks opt-in requests confirmation using billing email');
+    rl_mail_expect(rl_mail_subscriber('block@example.test')->first_name === 'Anna', 'Checkout billing name is reused for the opt-in profile');
     $count = count($messages); do_action('woocommerce_store_api_checkout_order_processed', $order);
     rl_mail_expect(count($messages) === $count, 'Repeated checkout processing does not duplicate signup');
     $classic = wc_create_order(); $orders[] = $classic; $classic->set_billing_email('classic@example.test'); $classic->save();

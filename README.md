@@ -9,7 +9,7 @@ Eigenständiges WordPress-Plugin für Wohnzimmerkonzerte, nach dem Installations
 - Eigene responsive Vorlagen für die Konzertstartseite, Konzertdetails und das Konzertarchiv. Ein zusätzliches Konzert-Theme ist nicht erforderlich. Das vorhandene Theme gestaltet normale Beiträge und Seiten; Warenkorb und Kasse können optional das Konzertdesign verwenden.
 - Ticketverkauf und Bestandsverwaltung über WooCommerce, PayPal Payments und Überweisung.
 - WooCommerce-Rabattcodes sowie PW WooCommerce Gift Cards für Geschenkgutscheine mit Restguthaben.
-- Konzertbenachrichtigungen mit freiwilliger Anmeldung, Double-Opt-in, Abmeldung und WooCommerce-Kundenanbindung. Bearbeitbare Nachrichten zu kommenden und vergangenen Konzerten, etwa Ankündigungen, Fundsachen und Fotolinks. Versand über den vorhandenen WordPress-Mailweg, ohne Newsletter-Dienst.
+- Konzertbenachrichtigungen mit freiwilliger Anmeldung, Double-Opt-in, Abmeldung und WooCommerce-Kundenanbindung. Bearbeitbare HTML-Mails mit Bildern, Links und Textalternative, persönlichen Platzhaltern und einstellbarem Absender zu kommenden und vergangenen Konzerten. Versand über den vorhandenen WordPress-Mailweg, ohne Newsletter-Dienst.
 - Galerien, Videos, Stories, Tags und Social-Media-Links. Ohne Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
 - Einstellungen, Konzerte und Ticketzuordnungen beziehen sich auf die aktuelle Website. Website-Einstellungen bleiben beim Themewechsel erhalten.
 

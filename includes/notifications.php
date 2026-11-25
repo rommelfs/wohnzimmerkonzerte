@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-const RL_MAIL_SCHEMA = '2';
+const RL_MAIL_SCHEMA = '3';
 function rl_mail_table(string $name): string { global $wpdb; return $wpdb->prefix . 'rl_mail_' . $name; }
 function rl_mail_input(array $input, string $key): string { return isset($input[$key]) && is_string($input[$key]) ? wp_unslash($input[$key]) : ''; }
 function rl_mail_consent(): string { return 'Ich möchte per E-Mail über neue Wohnzimmerkonzerte informiert werden. Ich kann mich jederzeit abmelden.'; }
@@ -16,6 +16,8 @@ function rl_mail_install(): void {
     dbDelta("CREATE TABLE $subscribers (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         email varchar(254) NOT NULL,
+        first_name varchar(100) NOT NULL DEFAULT '',
+        last_name varchar(100) NOT NULL DEFAULT '',
         status varchar(20) NOT NULL DEFAULT 'pending',
         generation bigint(20) unsigned NOT NULL DEFAULT 1,
         token_hash varchar(64) NOT NULL DEFAULT '',
@@ -33,6 +35,8 @@ function rl_mail_install(): void {
         request_key varchar(64) DEFAULT NULL,
         subject text NOT NULL,
         body longtext NOT NULL,
+        body_format varchar(10) NOT NULL DEFAULT 'text',
+        text_body longtext NULL,
         created_at bigint(20) unsigned NOT NULL,
         created_by bigint(20) unsigned NOT NULL,
         PRIMARY KEY  (id),
@@ -54,6 +58,9 @@ function rl_mail_install(): void {
     foreach ([$subscribers, $campaigns, $deliveries] as $table) {
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table))) !== $table) return;
     }
+    foreach ([$subscribers=>['first_name','last_name'], $campaigns=>['body_format','text_body']] as $table=>$columns) {
+        foreach ($columns as $column) if (!$wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s", $column))) return;
+    }
     // dbDelta adds columns/indexes but does not remove the old one-campaign-per-concert index.
     if (!$wpdb->get_row("SHOW INDEX FROM $campaigns WHERE Key_name='request_key' AND Non_unique=0")) return;
     $legacy_index = $wpdb->get_row("SHOW INDEX FROM $campaigns WHERE Key_name='concert_id'");
@@ -74,7 +81,7 @@ function rl_mail_url(string $action, int $id, string $token): string {
 function rl_mail_headers(): array { return ['Content-Type: text/plain; charset=UTF-8']; }
 
 /** Always return the same public result; never disclose whether an address is subscribed. */
-function rl_mail_subscribe(string $email, string $source): void {
+function rl_mail_subscribe(string $email, string $source, array $profile = []): void {
     global $wpdb;
     $email = strtolower(trim($email));
     if (!is_email($email) || strlen($email) > 254) return;
@@ -83,7 +90,7 @@ function rl_mail_subscribe(string $email, string $source): void {
     if ($row && ($row->status === 'confirmed' || (int)$row->requested_at > time() - HOUR_IN_SECONDS)) return;
     $token = bin2hex(random_bytes(32));
     $data = ['status' => 'pending', 'token_hash' => hash('sha256', $token), 'requested_at' => time(), 'confirmed_at' => 0,
-        'source' => sanitize_key($source), 'consent' => rl_mail_consent()];
+        'source' => sanitize_key($source), 'consent' => rl_mail_consent()] + rl_mail_profile($email, $profile);
     if ($row) {
         $data['generation'] = (int)$row->generation + 1;
         // Compare-and-swap protects a concurrent confirmation or duplicate signup.
@@ -97,7 +104,8 @@ function rl_mail_subscribe(string $email, string $source): void {
     $site = wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES);
     $body = "Bitte bestätige deine Anmeldung für Konzertbenachrichtigungen von $site:\n\n" . rl_mail_url('confirm', $id, $token)
         . "\n\n" . rl_mail_consent() . "\n\nDer Link gilt 48 Stunden. Ohne Bestätigung erhältst du keine Konzertmails. Falls du die Anmeldung nicht angefordert hast, ignoriere diese Nachricht.";
-    wp_mail($email, 'Konzertbenachrichtigungen: Anmeldung bestätigen', $body, rl_mail_headers());
+    $html = '<p>Bitte bestätige deine Anmeldung für Konzertbenachrichtigungen von ' . esc_html($site) . '.</p><p><a href="' . esc_url(rl_mail_url('confirm', $id, $token)) . '">Anmeldung bestätigen</a></p><p>' . esc_html(rl_mail_consent()) . '</p><p>Der Link gilt 48 Stunden. Ohne Bestätigung erhältst du keine Konzertmails. Falls du die Anmeldung nicht angefordert hast, ignoriere diese Nachricht.</p>';
+    rl_mail_send($email, 'Konzertbenachrichtigungen: Anmeldung bestätigen', $html, $body);
 }
 function rl_mail_confirm(int $id, string $token): bool {
     global $wpdb;
@@ -140,6 +148,7 @@ function rl_mail_signup_form(): string {
     return '<form class="rl-mail-signup" method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_signup">'
         . wp_nonce_field('rl_mail_signup', 'rl_mail_nonce', true, false)
         . '<p><label for="' . esc_attr($id) . '">E-Mail-Adresse</label><br><input id="' . esc_attr($id) . '" type="email" name="email" autocomplete="email" maxlength="254" required value="' . esc_attr($email) . '"></p>'
+        . '<p><label for="' . esc_attr($id) . '-first">Vorname (optional)</label><br><input id="' . esc_attr($id) . '-first" name="first_name" autocomplete="given-name" maxlength="100" value="' . esc_attr($user->first_name) . '"></p><p><label for="' . esc_attr($id) . '-last">Nachname (optional)</label><br><input id="' . esc_attr($id) . '-last" name="last_name" autocomplete="family-name" maxlength="100" value="' . esc_attr($user->last_name) . '"></p>'
         . '<p><label><input type="checkbox" name="consent" value="1" required> ' . esc_html(rl_mail_consent()) . '</label></p>'
         . ($privacy ? '<p><a href="' . esc_url($privacy) . '">Datenschutzhinweise</a></p>' : '')
         . '<button class="button" type="submit">Konzertbenachrichtigungen abonnieren</button></form>';
@@ -153,7 +162,7 @@ function rl_mail_signup(): void {
         $count = (int)get_transient($key);
         if ($count < 5) {
             set_transient($key, $count + 1, HOUR_IN_SECONDS);
-            rl_mail_subscribe(sanitize_email(rl_mail_input($_POST, 'email')), 'form');
+            rl_mail_subscribe(sanitize_email(rl_mail_input($_POST, 'email')), 'form', ['first_name'=>rl_mail_input($_POST, 'first_name'), 'last_name'=>rl_mail_input($_POST, 'last_name')]);
         }
     }
     rl_mail_page('Falls für diese Adresse eine Bestätigung erforderlich ist, erhältst du eine E-Mail. Bitte bestätige dort deine Anmeldung. Prüfe auch deinen Spamordner.');
@@ -179,9 +188,12 @@ function rl_mail_body(string $body): string {
 }
 function rl_mail_message(array $input) {
     $subject = sanitize_text_field(rl_mail_input($input, 'subject'));
-    $body = rl_mail_body(rl_mail_input($input, 'body'));
-    if ($subject === '' || $body === '' || preg_match_all('/./u', $subject) > 200 || strlen($body) > 50000) return new WP_Error('message', 'Bitte Betreff (höchstens 200 Zeichen) und Nachricht (höchstens 50.000 Bytes) ausfüllen.');
-    return [$subject, $body];
+    $format = rl_mail_input($input, 'body_format') ?: 'text';
+    if (!in_array($format, ['text','html'], true)) return new WP_Error('format', 'Ungültiges Nachrichtenformat.');
+    $body = $format === 'html' ? rl_mail_html(wpautop(rl_mail_input($input, 'body'))) : rl_mail_body(rl_mail_input($input, 'body'));
+    $text = rl_mail_body(rl_mail_input($input, 'text_body'));
+    if ($subject === '' || $body === '' || preg_match_all('/./u', $subject) > 200 || strlen($body) > 50000 || strlen($text) > 50000) return new WP_Error('message', 'Bitte Betreff (höchstens 200 Zeichen) und Nachricht (höchstens 50.000 Bytes) ausfüllen.');
+    return $format === 'html' ? [$subject, $body, 'html', $text] : [$subject, $body];
 }
 function rl_mail_preview_signature(int $id, array $content, string $request_key): string {
     return wp_hash(wp_json_encode([get_current_blog_id(), get_current_user_id(), $id, $content, $request_key]));
@@ -198,7 +210,7 @@ function rl_mail_queue(int $id, ?array $content = null, string $request_key = ''
     global $wpdb;
     if (!rl_mail_concert_eligible($id)) return new WP_Error('concert', 'Bitte ein veröffentlichtes, nicht abgesagtes Konzert mit gültigem Beginn auswählen. Vergangene Konzerte sind ebenfalls möglich.');
     $content = $content ?? rl_mail_campaign_content($id);
-    $message = rl_mail_message(['subject' => wp_slash((string)($content[0] ?? '')), 'body' => wp_slash((string)($content[1] ?? ''))]);
+    $message = rl_mail_message(['subject' => wp_slash((string)($content[0] ?? '')), 'body' => wp_slash((string)($content[1] ?? '')), 'body_format'=>(string)($content[2] ?? 'text'), 'text_body'=>wp_slash((string)($content[3] ?? ''))]);
     if (is_wp_error($message)) return $message;
     [$subject, $body] = $message;
     // The UI supplies a fresh key per reviewed message. Reposting that form keeps the same key.
@@ -208,7 +220,7 @@ function rl_mail_queue(int $id, ?array $content = null, string $request_key = ''
     if ($wpdb->get_var($wpdb->prepare("SELECT id FROM $campaigns WHERE request_key=%s", $request_key))) return new WP_Error('duplicate', 'Dieser Versandauftrag wurde bereits freigegeben.');
     $wpdb->query('START TRANSACTION');
     // Unique request key prevents duplicate handoffs without preventing later messages about the same concert.
-    if (!$wpdb->insert($campaigns, ['concert_id' => $id, 'request_key' => $request_key, 'subject' => $subject, 'body' => $body, 'created_at' => time(), 'created_by' => get_current_user_id()])) {
+    if (!$wpdb->insert($campaigns, ['concert_id' => $id, 'request_key' => $request_key, 'subject' => $subject, 'body' => $body, 'body_format'=>$message[2] ?? 'text', 'text_body'=>$message[3] ?? '', 'created_at' => time(), 'created_by' => get_current_user_id()])) {
         $wpdb->query('ROLLBACK');
         return new WP_Error('duplicate', 'Dieser Versandauftrag wurde bereits freigegeben oder konnte nicht gespeichert werden.');
     }
@@ -234,17 +246,14 @@ function rl_mail_batch(): void {
     foreach ($rows as $delivery) {
         $claimed = $wpdb->query($wpdb->prepare("UPDATE $d SET status='sending', attempts=attempts+1, touched_at=%d WHERE id=%d AND status='queued'", time(), $delivery->id));
         if (!$claimed) continue;
-        $row = $wpdb->get_row($wpdb->prepare("SELECT d.*, s.email, s.status AS subscription_status, s.generation AS current_generation, c.concert_id, c.subject, c.body FROM $d d LEFT JOIN $s s ON s.id=d.subscriber_id JOIN $c c ON c.id=d.campaign_id WHERE d.id=%d", $delivery->id));
+        $row = $wpdb->get_row($wpdb->prepare("SELECT d.*, s.email, s.first_name, s.last_name, s.status AS subscription_status, s.generation AS current_generation, c.concert_id, c.subject, c.body, c.body_format, c.text_body FROM $d d LEFT JOIN $s s ON s.id=d.subscriber_id JOIN $c c ON c.id=d.campaign_id WHERE d.id=%d", $delivery->id));
         if (!$row || $row->subscription_status !== 'confirmed' || (int)$row->generation !== (int)$row->current_generation || !rl_mail_concert_eligible((int)$row->concert_id)) {
             $wpdb->update($d, ['status' => 'skipped'], ['id' => $delivery->id]);
             continue;
         }
-        $body = $row->body . "\n\nDu erhältst diese Nachricht, weil du Konzertbenachrichtigungen abonniert hast.\nAbmelden:\n"
-            . rl_mail_url('unsubscribe', (int)$row->subscriber_id, rl_mail_token((int)$row->subscriber_id));
-        foreach (['imprint' => 'Impressum', 'privacy' => 'Datenschutz'] as $key => $label) {
-            if ($url = rl_setting($key)) $body .= "\n$label: $url";
-        }
-        $ok = wp_mail($row->email, $row->subject, $body, rl_mail_headers());
+        $subscriber = (object)['id'=>(int)$row->subscriber_id, 'email'=>$row->email, 'first_name'=>$row->first_name, 'last_name'=>$row->last_name];
+        $mail = rl_mail_render($row, rl_mail_values($subscriber, (int)$row->concert_id));
+        $ok = rl_mail_send($row->email, $mail['subject'], $mail['html'], $mail['text']);
         $wpdb->update($d, ['status' => $ok ? 'sent' : ((int)$row->attempts < 3 ? 'queued' : 'failed'), 'touched_at' => time()], ['id' => $row->id]);
     }
     if ($wpdb->get_var("SELECT id FROM $d WHERE status IN ('queued','sending') LIMIT 1")) rl_mail_schedule();

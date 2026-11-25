@@ -16,6 +16,7 @@ function rl_mail_admin(): void {
         echo '<div class="notice notice-error"><p>' . esc_html($error) . '</p></div>';
         delete_transient('rl_mail_admin_' . get_current_user_id());
     }
+    rl_mail_sender_form();
     $confirmed = (int)$wpdb->get_var('SELECT COUNT(*) FROM ' . rl_mail_table('subscribers') . " WHERE status='confirmed'");
     echo '<h2>Nachricht zu einem Konzert</h2><p>' . esc_html($confirmed) . ' bestätigte Empfänger. Wähle einen kommenden oder vergangenen Abend und passe Betreff und Nachricht an, z. B. für eine Ankündigung, Fundsachen oder Fotolinks. Jede neue Freigabe erzeugt einen eigenen Auftrag.</p><form method="get"><input type="hidden" name="post_type" value="rl_concert"><input type="hidden" name="page" value="rl-notifications"><label for="rl-mail-concert">Konzert</label> <select name="concert" id="rl-mail-concert">';
     $selected = absint(rl_mail_input($_GET, 'concert'));
@@ -44,7 +45,7 @@ function rl_mail_admin(): void {
     $page = max(1, absint(rl_mail_input($_GET, 'paged')));
     $rows = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . rl_mail_table('subscribers') . ' ORDER BY id DESC LIMIT 50 OFFSET %d', ($page - 1) * 50));
     foreach ($rows as $row) {
-        echo '<tr><td>' . esc_html($row->email) . '</td><td>' . esc_html(rl_mail_status_label($row->status)) . '</td><td>' . esc_html($row->source) . '<br>Angefordert: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->requested_at));
+        echo '<tr><td>' . esc_html($row->email) . '<br>' . esc_html(trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''))) . '</td><td>' . esc_html(rl_mail_status_label($row->status)) . '</td><td>' . esc_html($row->source) . '<br>Angefordert: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->requested_at));
         if ($row->confirmed_at) echo '<br>Bestätigt: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->confirmed_at));
         if ($row->unsubscribed_at) echo '<br>Abgemeldet: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->unsubscribed_at));
         echo '<details><summary>Einwilligungstext</summary>' . esc_html($row->consent) . '</details></td><td><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_delete"><input type="hidden" name="subscriber" value="' . (int)$row->id . '">';
@@ -57,19 +58,43 @@ function rl_mail_admin(): void {
     echo wp_kses_post(paginate_links(['base' => add_query_arg('paged', '%#%', $base), 'current' => $page, 'total' => (int)ceil($total / 50)]));
     echo '<p>Anmeldeformular für weitere Seiten: <code>[rommelfangen_notifications]</code>. Auf der Konzertstartseite wird es automatisch angezeigt.</p></div>';
 }
+add_action('admin_init', function () {
+    register_setting('rl_mail_sender', 'rl_mail_sender', ['type'=>'array', 'sanitize_callback'=>'rl_mail_sender_settings', 'default'=>[]]);
+});
+function rl_mail_sender_form(): void {
+    $sender = get_option('rl_mail_sender', []); $sender = is_array($sender) ? $sender : [];
+    settings_errors('rl_mail_sender');
+    echo '<details><summary><strong>Absender der Konzertmails</strong></summary><p>Gilt für Anmeldebestätigungen und Konzertnachrichten dieser Website. Leere Felder übernehmen die WordPress-Vorgabe.</p><form method="post" action="options.php">';
+    settings_fields('rl_mail_sender');
+    echo '<p><label for="rl-mail-from-name">Absendername</label><br><input class="regular-text" id="rl-mail-from-name" name="rl_mail_sender[name]" value="' . esc_attr($sender['name'] ?? '') . '" placeholder="Rommelfangen Konzerte"></p><p><label for="rl-mail-from-email">Absenderadresse</label><br><input class="regular-text" type="email" id="rl-mail-from-email" name="rl_mail_sender[email]" value="' . esc_attr($sender['email'] ?? '') . '" placeholder="konzerte@rommelfangen.de"></p>';
+    submit_button('Absender speichern', 'secondary', 'submit', false);
+    echo '</form></details>';
+}
+add_action('admin_enqueue_scripts', function () {
+    if (rl_mail_input($_GET, 'page') === 'rl-notifications' && current_user_can('manage_options')) wp_enqueue_media();
+});
 /** Editing and explicit review are separate steps; only the reviewed text can be queued. */
 function rl_mail_composer(int $id, string $base): void {
-    [$subject, $body] = rl_mail_campaign_content($id);
-    $preview = null;
+    [$subject, $plain] = rl_mail_campaign_content($id);
+    $subject = (rl_timestamp((string)get_post_meta($id, 'rl_start', true)) <= time() ? 'Rückblick: ' : 'Neues Wohnzimmerkonzert: ') . '{Konzert}';
+    $body = '<p>{Anrede}</p><h2>{Konzert}</h2><p>{Datum} · {Uhrzeit}</p>' . wpautop(esc_html(wp_specialchars_decode(wp_strip_all_tags(get_the_excerpt($id)), ENT_QUOTES))) . '<p><a href="{Konzertlink}">Konzert ansehen</a></p>';
+    $format = 'html'; $text = ''; $preview = null;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && rl_mail_input($_POST, 'mail_step') === 'preview') {
         check_admin_referer('rl_mail_preview');
-        $subject = sanitize_text_field(rl_mail_input($_POST, 'subject'));
-        $body = rl_mail_body(rl_mail_input($_POST, 'body'));
         $preview = rl_mail_message($_POST);
+        $subject = sanitize_text_field(rl_mail_input($_POST, 'subject'));
+        $format = rl_mail_input($_POST, 'body_format') ?: 'text';
+        if (!in_array($format, ['html','text'], true)) $format = 'html';
+        $body = $format === 'html' ? rl_mail_html(wpautop(rl_mail_input($_POST, 'body'))) : rl_mail_body(rl_mail_input($_POST, 'body'));
+        $text = rl_mail_body(rl_mail_input($_POST, 'text_body'));
     }
     echo '<form method="post" action="' . esc_url(add_query_arg('concert', $id, $base)) . '"><input type="hidden" name="mail_step" value="preview">';
     wp_nonce_field('rl_mail_preview');
-    echo '<p><label for="rl-mail-subject">Betreff</label><br><input class="large-text" id="rl-mail-subject" name="subject" maxlength="200" required value="' . esc_attr($subject) . '"></p><p><label for="rl-mail-body">Nachricht (Text; Links zu Fotos oder Galerien können eingefügt werden)</label><br><textarea class="large-text" rows="12" id="rl-mail-body" name="body" required>' . esc_textarea($body) . '</textarea></p>';
+    echo '<p><label for="rl-mail-format">Nachrichtenformat</label> <select id="rl-mail-format" name="body_format"><option value="html" ' . selected($format, 'html', false) . '>HTML mit Textalternative</option><option value="text" ' . selected($format, 'text', false) . '>Nur Text</option></select></p><p><label for="rl-mail-subject">Betreff</label><br><input class="large-text" id="rl-mail-subject" name="subject" maxlength="200" required value="' . esc_attr($subject) . '"></p><p><label for="rl_mail_body_editor">Nachricht</label></p>';
+    wp_editor($body, 'rl_mail_body_editor', ['textarea_name'=>'body','textarea_rows'=>14,'media_buttons'=>true,'tinymce'=>$format === 'html','quicktags'=>true]);
+    echo '<p>Bilder über „Dateien hinzufügen“ aus der Mediathek wählen; Links über den Editor einfügen. Bei „Nur Text“ werden Formatierungen entfernt.</p><p><label for="rl-mail-text">Textalternative (optional; leer lassen für automatische Erstellung aus HTML)</label><br><textarea class="large-text" rows="6" id="rl-mail-text" name="text_body">' . esc_textarea($text) . '</textarea></p><details><summary>Verfügbare Platzhalter</summary><dl>';
+    foreach (rl_mail_placeholders() as $token=>$description) echo '<dt><code>' . esc_html($token) . '</code></dt><dd>' . esc_html($description) . '</dd>';
+    echo '</dl><p>Platzhalter funktionieren in Betreff, Nachricht und Textalternative. Link-Platzhalter können auch als Linkziel verwendet werden. Die Vorschau verwendet eine Beispielperson.</p></details>';
     submit_button('Vorschau prüfen', 'secondary', 'submit', false);
     echo '</form>';
     if ($preview === null) return;
@@ -77,8 +102,14 @@ function rl_mail_composer(int $id, string $base): void {
         echo '<div class="notice notice-error"><p>' . esc_html($preview->get_error_message()) . '</p></div>';
         return;
     }
+    $sample = (object)['id'=>0,'email'=>'anna@example.test','first_name'=>'Anna','last_name'=>'Muster'];
+    $values = rl_mail_values($sample, $id);
+    $values['{Abmeldelink}'] = home_url('/?beispiel-abmeldung=1');
+    $mail = rl_mail_render((object)['subject'=>$subject,'body'=>$body,'body_format'=>$format,'text_body'=>$text], $values);
     $key = bin2hex(random_bytes(32));
-    echo '<h3>Versandvorschau: ' . esc_html($subject) . '</h3><pre style="white-space:pre-wrap;max-width:65em">' . esc_html($body) . '</pre><p>Diese Nachricht geht an alle bei Freigabe bestätigten Abonnenten dieser Website. Jede E-Mail enthält zusätzlich einen persönlichen Abmeldelink und eure hinterlegten Impressums-/Datenschutzlinks.</p><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_queue"><input type="hidden" name="concert" value="' . $id . '"><input type="hidden" name="request_key" value="' . esc_attr($key) . '"><input type="hidden" name="preview" value="' . esc_attr(rl_mail_preview_signature($id, $preview, $key)) . '"><input type="hidden" name="subject" value="' . esc_attr($subject) . '"><textarea hidden name="body">' . esc_textarea($body) . '</textarea>';
+    echo '<h3>Versandvorschau: ' . esc_html($mail['subject']) . '</h3><p>Beispiel: Anna Muster (anna@example.test). Personendaten und Abmeldelink werden für jeden Empfänger ersetzt.</p>';
+    if ($mail['html'] !== '') echo '<iframe title="HTML-Mailvorschau" sandbox="" referrerpolicy="no-referrer" style="width:100%;height:440px;border:1px solid #c3c4c7" srcdoc="' . esc_attr($mail['html']) . '"></iframe>';
+    echo '<h4>Textalternative</h4><pre style="white-space:pre-wrap;max-width:65em">' . esc_html($mail['text']) . '</pre><p>Diese Nachricht geht an alle bei Freigabe bestätigten Abonnenten dieser Website. Jede E-Mail enthält zusätzlich einen persönlichen Abmeldelink und eure hinterlegten Impressums-/Datenschutzlinks.</p><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_queue"><input type="hidden" name="concert" value="' . $id . '"><input type="hidden" name="request_key" value="' . esc_attr($key) . '"><input type="hidden" name="preview" value="' . esc_attr(rl_mail_preview_signature($id, $preview, $key)) . '"><input type="hidden" name="subject" value="' . esc_attr($subject) . '"><input type="hidden" name="body_format" value="' . esc_attr($format) . '"><textarea hidden name="body">' . esc_textarea($body) . '</textarea><textarea hidden name="text_body">' . esc_textarea($text) . '</textarea>';
     wp_nonce_field('rl_mail_queue');
     submit_button('Jetzt für bestätigte Empfänger freigeben', 'primary', 'submit', false);
     echo '</form>';

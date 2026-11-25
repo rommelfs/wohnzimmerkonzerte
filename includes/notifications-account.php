@@ -22,7 +22,7 @@ add_action('woocommerce_store_api_checkout_order_processed', function ($order) {
 });
 function rl_mail_order_signup($order, string $source): void {
     if ($order->get_meta('_rl_mail_signup_requested')) return;
-    rl_mail_subscribe($order->get_billing_email(), $source);
+    rl_mail_subscribe($order->get_billing_email(), $source, ['first_name'=>$order->get_billing_first_name(), 'last_name'=>$order->get_billing_last_name()]);
     $order->update_meta_data('_rl_mail_signup_requested', '1');
     $order->save_meta_data();
 }
@@ -40,7 +40,7 @@ add_action('admin_post_rl_mail_account', function () {
     if (!is_user_logged_in() || $_SERVER['REQUEST_METHOD'] !== 'POST') wp_die('Nicht erlaubt.', '', ['response' => 403]);
     check_admin_referer('rl_mail_account');
     $email = wp_get_current_user()->user_email;
-    if (($_POST['consent'] ?? '') === '1') rl_mail_subscribe($email, 'account');
+    if (($_POST['consent'] ?? '') === '1') rl_mail_subscribe($email, 'account', ['first_name'=>wp_get_current_user()->first_name, 'last_name'=>wp_get_current_user()->last_name]);
     elseif ($row = rl_mail_subscriber($email)) rl_mail_unsubscribe((int)$row->id, rl_mail_token((int)$row->id));
     wp_safe_redirect(wc_get_account_endpoint_url('dashboard'));
     exit;
@@ -57,7 +57,7 @@ function rl_mail_privacy_export(string $email, int $page = 1): array {
     $items = [];
     if ($page === 1) {
         $data = [];
-        foreach (['email' => 'E-Mail', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
+        foreach (['email' => 'E-Mail', 'first_name'=>'Vorname', 'last_name'=>'Nachname', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
             $value = str_ends_with($key, '_at') ? ((int)$row->$key ? gmdate('c', (int)$row->$key) : '') : $row->$key;
             $data[] = ['name' => $label, 'value' => $value];
         }
