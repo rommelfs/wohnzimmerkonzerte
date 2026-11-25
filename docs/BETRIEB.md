@@ -64,3 +64,35 @@ Vor dem Livegang bleiben visuelle Prüfung mit eurem aktiven Theme, externe PayP
 ## Website und konzertübergreifender Ticketshop
 
 Die Gestaltung, sortierbaren Bereiche und die neue Über-uns-Abteilung werden unter **Einstellungen → Rommelfangen Concerts** gepflegt. Jedes Konzert kann getrennte Bilder und Farben für Ankündigung und Rückblick erhalten. Der Ticketshop übernimmt den ausgewählten Abend und erlaubt Tickets mehrerer Konzerte in einem WooCommerce-Warenkorb. [Vollständige Bedienungsanleitung](WEBSITE-EDITOR.md).
+## Konzertbenachrichtigungen
+
+Die Funktion gehört zum Konzert-Plugin und verschickt über `wp_mail()` auf eurem vorhandenen Server. Ein externer Newsletter-Anbieter, Trackingpixel oder ein kostenpflichtiger Dienst werden nicht eingebunden. Absender, Postfix, SPF/DKIM/DMARC und Rückläuferpostfach bleiben serverseitig eingerichtet.
+
+### Anmeldung und Kundenkonto
+
+Auf der Konzertstartseite erscheint ein Anmeldeformular. Für weitere Seiten gibt es `[rommelfangen_notifications]`. Angemeldeten Benutzern wird ihre Konto-E-Mail-Adresse vorausgefüllt. Im klassischen WooCommerce-Checkout und im Checkout-Block steht eine **freiwillige, nicht vorausgewählte** Einwilligung; die Rechnungs-E-Mail wird dann wiederverwendet. Ein Kauf ohne Einwilligung meldet niemanden an. Frühere Käufer werden nicht importiert oder automatisch angemeldet.
+
+Jede neue Anmeldung muss über eine Bestätigungsmail bestätigt werden, auch beim Checkout und im Kundenkonto. Der Bestätigungslink gilt 48 Stunden. Das Öffnen des Links allein ändert nichts: Auf der Zielseite muss die Bestätigung angeklickt werden, damit automatische E-Mail-Linkprüfungen keine Anmeldung auslösen. Erneute Anforderungen sind pro Adresse höchstens stündlich möglich; das öffentliche Formular begrenzt zusätzlich Anforderungen je IP über einen kurzlebigen gesalzenen Hash. Unbestätigte Anmeldungen werden nach sieben Tagen entfernt.
+
+Unter „Mein Konto“ können Kunden ihre Anmeldung für die aktuelle Konto-Adresse verwalten. Jede Konzertmail enthält einen persönlichen Abmeldelink mit einer Bestätigungsseite, ohne Login. Die Abmeldung gilt sofort für noch nicht übergebene Mails. Eine bereits an den Mailserver übergebene Nachricht kann nicht zurückgerufen werden. Eine erneute Anmeldung erfordert wieder eine Bestätigung und reaktiviert keine alten Versandaufträge. Eine Änderung der Konto-Adresse überträgt eine vorhandene Einwilligung nicht auf die neue Adresse.
+
+### Einen Konzertversand freigeben
+
+1. Konzert mit zukünftigem Beginn veröffentlichen und den öffentlichen Auszug pflegen.
+2. Unter **Konzerte → Benachrichtigungen** das Konzert auswählen und „Vorschau anzeigen“ klicken. Die Vorschau enthält Titel, Beginn, Auszug und Konzertlink; private Ortsangaben werden nicht übernommen.
+3. Vorschau prüfen und **„Jetzt für bestätigte Empfänger freigeben“** klicken. Es wird nicht automatisch beim Veröffentlichen verschickt. Pro Konzert ist ein Auftrag möglich; doppelte Klicks erzeugen keinen zweiten Versand.
+4. Versandstatus auf derselben Seite kontrollieren. Der Inhalt wird bei Freigabe gespeichert; spätere Textänderungen verändern diesen Auftrag nicht. Abgesagte, unveröffentlichte oder inzwischen vergangene Konzerte werden beim Versand übersprungen.
+
+Die Empfängerliste umfasst die zum Freigabezeitpunkt bestätigten Adressen dieser Website. Jede Adresse erhält eine einzelne E-Mail, keine offen sichtbaren Verteiler. Neu angemeldete Empfänger erhalten keine rückwirkenden Ankündigungen. Impressums- und Datenschutzlinks unter **Einstellungen → Rommelfangen Concerts** pflegen; diese werden angehängt. Die vollständige Absenderkennzeichnung und Datenschutzerklärung für euren Betrieb prüfen.
+
+Der Versand erfolgt über WordPress-Cron in Portionen von höchstens 20 Empfängern pro Lauf, frühestens eine Minute nach Freigabe. Bei wenig Besuchern einen echten Hosting-Cron für `wp-cron.php` beziehungsweise `wp cron event run --due-now --url=…` einrichten, bei Multisite für jede aktive Konzertwebsite. Das öffentliche Anmeldeformular und `wp-admin/admin-post.php` dürfen nicht mit veralteten Formular-Nonces zwischengespeichert werden.
+
+„An Mailserver übergeben“ bedeutet, dass `wp_mail()` Erfolg gemeldet hat; dies ist kein Zustellnachweis. Fehlgeschlagene Übergaben werden nach mindestens fünf Minuten höchstens dreimal versucht. Bei einem Prozessabbruch bleibt eine Übergabe möglicherweise unklar: Nach 15 Minuten wird sie entsprechend markiert und nicht automatisch wiederholt. Solche Fälle und Rückläufer anhand der Serverprotokolle prüfen. Automatische Bounce-Verarbeitung gehört nicht zu dieser Funktion; dauerhaft unzustellbare Adressen in der Empfängerverwaltung entfernen. Ein deaktiviertes Plugin verschickt nichts; nach Reaktivierung werden wartende Aufträge wieder eingeplant.
+
+### Datenhaltung
+
+Empfängerstatus, Einwilligungstext, Anmeldequelle, Anforderungs-/Bestätigungs-/Abmeldezeitpunkt und Versandstatus liegen in drei eigenen Datenbanktabellen mit dem Tabellenpräfix der jeweiligen Website (`rl_mail_subscribers`, `rl_mail_campaigns`, `rl_mail_deliveries`). Bestätigungstokens werden nur als Hash gespeichert. Abmeldelinks sind durch WordPress-Schlüssel gesichert; nach einem Wechsel dieser Schlüssel werden neue Links benötigt.
+
+Administratoren können Anmeldungen und zugehörige Versanddaten unter **Konzerte → Benachrichtigungen** löschen. Die Funktion ist außerdem an die WordPress-Werkzeuge für den Export und das Löschen personenbezogener Daten angeschlossen. Abgemeldete Adressen bleiben bis zur Löschung als Abmeldenachweis erhalten; eine für euren Betrieb passende Löschfrist festlegen. Deaktivierung entfernt keine Einwilligungsdaten. Die Tabellen gehören in eure Datenbanksicherung.
+
+Die automatisierten Integrationstests prüfen Anmeldung, Bestätigung, Abmeldung, beide Checkout-Anbindungen, Zugriffsrechte, Wiederholungen, Fehlerfälle, Datenschutzauskunft und Website-Isolation ohne echten Versand. Vor dem ersten echten Verteiler zusätzlich eine eigene Adresse anmelden, bestätigen, eine Konzertmail über euren Mailserver empfangen und wieder abmelden.

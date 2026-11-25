@@ -76,11 +76,15 @@ try:
     print('PASS: WooCommerce ticket and capacity regression tests on mapped site', flush=True)
     print(wp('eval-file', str(repository / 'tests/editor-shop.php'), url=a), flush=True)
     check("get_option('rl_site', null) === null", 'Editor settings remain isolated from neighboring websites', b)
+    wp('eval-file', str(repository / 'tests/notifications.php'), url=a)
+    print('PASS: Notification consent, queue, checkout and privacy regression tests on mapped site', flush=True)
+    wp('eval', "$GLOBALS['wpdb']->insert(rl_mail_table('subscribers'), ['email'=>'isolation@example.test','status'=>'confirmed','consent'=>'test']);", url=a)
 
     wp('plugin', 'activate', 'wohnzimmerkonzerte', '--network')
     network_enabled = True
     check("function_exists('rl_events') && rl_events() === [] && rl_setting('instagram') === ''", 'Network activation preserves per-site isolation', b)
     check("count(rl_events()) === 1 && rl_setting('instagram') === 'https://example.test/only-a'", 'Network activation preserves concert website data', a)
+    check("rl_mail_subscriber('isolation@example.test') === null && (int)$GLOBALS['wpdb']->get_var('SELECT COUNT(*) FROM ' . rl_mail_table('campaigns')) === 0", 'Notification recipients and campaigns are isolated per website', b)
     check("rl_setting('youtube') === 'https://example.test/legacy-b'", 'Legacy theme links migrate on their own website', b)
     wp('eval', "update_option('rl_settings', ['youtube'=>'https://example.test/edited-b']); delete_option('rl_rewrite_version');", url=b)
     check("rl_setting('youtube') === 'https://example.test/edited-b'", 'Later updates preserve edited plugin settings', b)
@@ -96,5 +100,7 @@ finally:
     if network_enabled:
         wp('plugin', 'deactivate', 'wohnzimmerkonzerte', '--network')
     for site_id in reversed(ids):
+        # The plugin may be inactive on the main site by now; remove only this runner's disposable tables.
+        wp('eval', f"global $wpdb; $prefix=$wpdb->get_blog_prefix({site_id}); foreach (['subscribers','campaigns','deliveries'] as $name) $wpdb->query('DROP TABLE IF EXISTS ' . $prefix . 'rl_mail_' . $name);")
         wp('site', 'delete', str(site_id), '--yes')
 print('Multisite integration checks passed; temporary websites removed.', flush=True)

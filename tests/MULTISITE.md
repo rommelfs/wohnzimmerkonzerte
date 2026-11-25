@@ -13,7 +13,7 @@ python3 tests/multisite.py \
 
 Die Domain des Netzwerks muss der Testinstallation entsprechen. Die zusätzliche gemappte `.example.test`-Domain wird nur durch WP-CLI adressiert und benötigt für diese Tests kein öffentliches DNS oder Zertifikat.
 
-Geprüft werden gezielte Website-Aktivierung, inaktive Nachbarwebsite, Domain-Mapping und Konzert-Permalinks, Shortcode-Rendering, getrennte Konzerte/Einstellungen, automatische URL-Regeln nach einem Update, WooCommerce-Tickets mit Bestandsabzug und Rückbuchung, Netzwerkaktivierung, neue Websites und datenerhaltende Deaktivierung.
+Geprüft werden gezielte Website-Aktivierung, inaktive Nachbarwebsite, Domain-Mapping und Konzert-Permalinks, Shortcode-Rendering, getrennte Konzerte/Einstellungen, automatische URL-Regeln nach einem Update, WooCommerce-Tickets mit Bestandsabzug und Rückbuchung, Netzwerkaktivierung, neue Websites und datenerhaltende Deaktivierung. Zusätzlich werden Konzertbenachrichtigungen mit Double-Opt-in, Abmeldung, Checkout (klassisch und Blocks), Datenschutzexport/-löschung und dem Hintergrundversand inklusive Fehler- und Wiederholungsfällen geprüft (`tests/notifications.php`). Der Mailweg wird abgefangen; es werden keine externen E-Mails versendet.
 
 GitHub Actions führt diese Prüfung mit MySQL aus. Lokale SQLite-Prüfungen dienen zusätzlich der Entwicklung; Zahlungs-/Gutschein-Anbieter werden damit nicht vollständig getestet. Visuelle Prüfung mit dem produktiven Theme und echte Sandbox-Zahlungen bleiben Teil der Abnahme.
 

@@ -9,6 +9,7 @@ Eigenständiges WordPress-Plugin für Wohnzimmerkonzerte, nach dem Installations
 - Eigene responsive Vorlagen für die Konzertstartseite, Konzertdetails und das Konzertarchiv. Ein zusätzliches Konzert-Theme ist nicht erforderlich. Das vorhandene Theme gestaltet normale Beiträge und Seiten; Warenkorb und Kasse können optional das Konzertdesign verwenden.
 - Ticketverkauf und Bestandsverwaltung über WooCommerce, PayPal Payments und Überweisung.
 - WooCommerce-Rabattcodes sowie PW WooCommerce Gift Cards für Geschenkgutscheine mit Restguthaben.
+- Konzertbenachrichtigungen mit freiwilliger Anmeldung, Double-Opt-in, Abmeldung und WooCommerce-Kundenanbindung. Versand über den vorhandenen WordPress-Mailweg, ohne Newsletter-Dienst.
 - Galerien, Videos, Stories, Tags und Social-Media-Links. Ohne Inhalte erscheinen passende Leerzustände und eine eigene Bühnenillustration.
 - Einstellungen, Konzerte und Ticketzuordnungen beziehen sich auf die aktuelle Website. Website-Einstellungen bleiben beim Themewechsel erhalten.
 
@@ -54,7 +55,7 @@ git pull --ff-only
 
 Zuvor Dateien und Datenbank sichern, Änderungen auf der Testwebsite prüfen. Bei lokalen Codeänderungen zuerst vergleichen und committen; bei Fehlern abbrechen, keine erzwungenen Resets. Bei aktiviertem Cache anschließend den Website-Cache leeren.
 
-Das Plugin prüft benötigte Weiterentwicklungen seiner URL-Regeln pro Website automatisch beim nächsten Laden. Nach einem normalen Update ist keine erneute Aktivierung nötig. Es verwendet keine eigenen Datenbanktabellen und verändert weder die Netzwerk-Konfiguration noch `.htaccess`.
+Das Plugin prüft benötigte Weiterentwicklungen seiner URL-Regeln pro Website automatisch beim nächsten Laden. Nach einem normalen Update ist keine erneute Aktivierung nötig. Für Konzertbenachrichtigungen legt es drei eigene Tabellen pro Website an; es verändert weder die Netzwerk-Konfiguration noch `.htaccess`.
 
 Konzerte, Bestellungen, Einstellungen, Uploads, Zugangsdaten sowie TAKA und andere Plugins liegen außerhalb dieses Repositorys. WordPress, WooCommerce und Erweiterungen weiterhin separat aktualisieren. Alle Websites, die dieses Plugin aktiv verwenden, erhalten dieselbe Codeversion.
 

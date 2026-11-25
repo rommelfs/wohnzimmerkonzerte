@@ -25,6 +25,8 @@ function rl_activate(bool $network_wide = false): void {
     rl_maybe_upgrade();
 }
 function rl_deactivate(bool $network_wide = false): void {
+    wp_clear_scheduled_hook('rl_mail_batch');
+    wp_clear_scheduled_hook('rl_mail_cleanup');
     unregister_post_type('rl_concert');
     unregister_post_type('rl_testimonial');
     if (is_multisite() && $network_wide) {
@@ -33,6 +35,10 @@ function rl_deactivate(bool $network_wide = false): void {
         do {
             $ids = get_sites(['network_id' => get_current_network_id(), 'fields' => 'ids', 'number' => 100, 'offset' => $offset, 'orderby' => 'id', 'order' => 'ASC']);
             foreach ($ids as $id) {
+                switch_to_blog((int)$id);
+                wp_clear_scheduled_hook('rl_mail_batch');
+                wp_clear_scheduled_hook('rl_mail_cleanup');
+                restore_current_blog();
                 delete_blog_option((int)$id, 'rl_rewrite_version');
                 delete_blog_option((int)$id, 'rewrite_rules');
             }

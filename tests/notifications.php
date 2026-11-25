@@ -1,0 +1,190 @@
+<?php
+// Run only via WP-CLI on the disposable website used by tests/multisite.py.
+if (!defined('WP_CLI') || !WP_CLI || !in_array(wp_get_environment_type(), ['local','development'], true) || !function_exists('rl_mail_subscribe') || !class_exists('WooCommerce')) throw new RuntimeException('Use an isolated development website with both plugins active.');
+global $wpdb;
+$s = rl_mail_table('subscribers'); $d = rl_mail_table('deliveries'); $c = rl_mail_table('campaigns');
+if ((int)$wpdb->get_var("SELECT COUNT(*) FROM $s") || (int)$wpdb->get_var("SELECT COUNT(*) FROM $c")) throw new RuntimeException('Refusing to run with existing notification data.');
+function rl_mail_expect($ok, string $label): void { if (!$ok) throw new RuntimeException($label); echo "PASS: $label\n"; }
+class RL_Mail_Test_Response extends RuntimeException {}
+$die_handler = static fn() => static function ($message) { throw new RL_Mail_Test_Response($message); };
+add_filter('wp_die_handler', $die_handler);
+$original_remote = $_SERVER['REMOTE_ADDR'] ?? null;
+$_SERVER['REMOTE_ADDR']='notification-test-' . wp_generate_password(16,false);
+$rate_key='rl_mail_rate_' . hash_hmac('sha256', $_SERVER['REMOTE_ADDR'], wp_salt('nonce'));
+$messages = []; $accept = true; $events = []; $orders = []; $users = []; $original_user = get_current_user_id();
+$capture = static function ($pre, $mail) use (&$messages, &$accept) { $messages[] = $mail; return $accept; };
+add_filter('pre_wp_mail', $capture, PHP_INT_MAX, 2);
+$subscribe = static function (string $email) use (&$messages): array {
+    rl_mail_subscribe($email, 'test');
+    $row = rl_mail_subscriber($email);
+    $mail = end($messages);
+    preg_match('/token=([a-f0-9]{64})/', $mail['message'], $match);
+    if (!$row || empty($match[1])) throw new RuntimeException('Missing confirmation mail');
+    return [(int)$row->id, $match[1]];
+};
+$concert = static function () use (&$events): int {
+    $id = wp_insert_post(['post_type'=>'rl_concert','post_status'=>'publish','post_title'=>"Notification concert\nwith newline",'post_excerpt'=>'Public description']);
+    $events[] = $id;
+    update_post_meta($id, 'rl_start', wp_date('Y-m-d\TH:i', time()+DAY_IN_SECONDS));
+    return $id;
+};
+ob_start();
+try {
+    rl_mail_subscribe('invalid', 'test');
+    rl_mail_expect(count($messages) === 0, 'Invalid addresses do not receive mail');
+    [$a, $token] = $subscribe('Notify-A@example.test');
+    $row = rl_mail_subscriber('notify-a@example.test');
+    rl_mail_expect($row->status === 'pending' && $row->token_hash !== $token && hash_equals($row->token_hash, hash('sha256', $token)), 'Signup is pending; only confirmation-token hash is stored');
+    $_REQUEST = ['mode'=>'confirm', 'id'=>(string)$a, 'token'=>$token]; $_SERVER['REQUEST_METHOD']='GET';
+    try { rl_mail_link(); } catch (RL_Mail_Test_Response $response) { rl_mail_expect(str_contains($response->getMessage(), 'method="post"'), 'Confirmation GET renders an explicit confirmation form'); }
+    rl_mail_expect(rl_mail_subscriber('notify-a@example.test')->status === 'pending', 'Email link scanners cannot confirm via GET');
+    $_REQUEST = [];
+    $count = count($messages);
+    rl_mail_subscribe('NOTIFY-A@example.test', 'checkout');
+    rl_mail_expect(count($messages) === $count, 'Duplicate signup is normalized and throttled');
+    rl_mail_expect(!rl_mail_confirm($a, str_repeat('0', 64)) && rl_mail_confirm($a, $token) && !rl_mail_confirm($a, $token), 'Confirmation requires the correct single-use token');
+    rl_mail_expect(rl_mail_subscriber('notify-a@example.test')->consent === rl_mail_consent(), 'Consent text, source and confirmation timestamp are recorded');
+    rl_mail_subscribe('notify-a@example.test', 'form');
+    rl_mail_expect(count($messages) === $count, 'Confirmed recipients receive no repeated confirmation');
+    [$b, $expired] = $subscribe('notify-b@example.test');
+    $wpdb->update($s, ['requested_at'=>time()-3*DAY_IN_SECONDS], ['id'=>$b]);
+    rl_mail_expect(!rl_mail_confirm($b, $expired), 'Expired confirmation links are rejected');
+    [$b, $btoken] = $subscribe('notify-b@example.test');
+    rl_mail_expect(!rl_mail_confirm($b, $expired) && rl_mail_confirm($b, $btoken), 'A fresh request invalidates the old confirmation link');
+    [$pending, $pending_token] = $subscribe('pending@example.test');
+    rl_mail_expect(!rl_mail_unsubscribe($a, str_repeat('0',64)), 'Forged unsubscribe token is rejected');
+    $event = $concert();
+    [$subject, $body] = rl_mail_campaign_content($event);
+    rl_mail_expect(!str_contains($subject, "\n") && str_contains($body, 'Public description'), 'Campaign preview uses public content and a safe subject');
+    $campaign = rl_mail_queue($event);
+    rl_mail_expect(!is_wp_error($campaign) && (int)$wpdb->get_var("SELECT COUNT(*) FROM $d") === 2, 'Only confirmed recipients are queued');
+    rl_mail_expect(is_wp_error(rl_mail_queue($event)), 'Duplicate campaign submission cannot duplicate deliveries');
+    $_REQUEST = ['mode'=>'unsubscribe', 'id'=>(string)$b, 'token'=>rl_mail_token($b)]; $_SERVER['REQUEST_METHOD']='GET';
+    try { rl_mail_link(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(rl_mail_subscriber('notify-b@example.test')->status === 'confirmed', 'Email link scanners cannot unsubscribe via GET');
+    $_SERVER['REQUEST_METHOD']='POST';
+    try { rl_mail_link(); } catch (RL_Mail_Test_Response $response) {}
+    $_REQUEST=[];
+    rl_mail_expect(rl_mail_subscriber('notify-b@example.test')->status === 'unsubscribed', 'Recipient can unsubscribe by explicit submission without login');
+    $count = count($messages);
+    rl_mail_batch();
+    rl_mail_expect(count($messages) === $count+1 && end($messages)['to'] === 'notify-a@example.test', 'Worker skips unsubscribed recipients and sends individually');
+    rl_mail_expect(str_contains(end($messages)['message'], 'mode=unsubscribe') && str_contains(end($messages)['message'], rl_mail_token($a)), 'Every announcement contains a personal unsubscribe link');
+    rl_mail_batch();
+    rl_mail_expect(count($messages) === $count+1, 'Repeated worker does not resend completed deliveries');
+    rl_mail_expect($wpdb->get_var($wpdb->prepare("SELECT status FROM $d WHERE subscriber_id=%d", $a)) === 'sent', 'Successful handoff is tracked separately from delivery to inbox');
+    $event2 = $concert();
+    $campaign2 = rl_mail_queue($event2);
+    $accept = false;
+    for ($i=0; $i<3; $i++) {
+        $wpdb->query($wpdb->prepare("UPDATE $d SET touched_at=0 WHERE campaign_id=%d", $campaign2));
+        rl_mail_batch();
+    }
+    rl_mail_expect($wpdb->get_var($wpdb->prepare("SELECT status FROM $d WHERE campaign_id=%d", $campaign2)) === 'failed', 'Failed handoff stops after three attempts');
+    $accept = true;
+    $event3 = $concert(); $campaign3 = rl_mail_queue($event3);
+    update_post_meta($event3, 'rl_cancelled', '1');
+    $count = count($messages); rl_mail_batch();
+    rl_mail_expect(count($messages) === $count && $wpdb->get_var($wpdb->prepare("SELECT status FROM $d WHERE campaign_id=%d", $campaign3)) === 'skipped', 'Cancelled concerts are skipped even after queuing');
+    rl_mail_expect(is_wp_error(rl_mail_queue($event3)), 'Cancelled concerts cannot be queued');
+    $event4 = $concert(); $campaign4 = rl_mail_queue($event4);
+    $wpdb->query($wpdb->prepare("UPDATE $d SET status='sending', touched_at=%d WHERE campaign_id=%d", time()-20*MINUTE_IN_SECONDS, $campaign4));
+    $count = count($messages); rl_mail_batch();
+    rl_mail_expect(count($messages) === $count && $wpdb->get_var($wpdb->prepare("SELECT status FROM $d WHERE campaign_id=%d", $campaign4)) === 'uncertain', 'Interrupted handoffs are reported and not automatically duplicated');
+    $event5 = $concert(); $campaign5 = rl_mail_queue($event5);
+    rl_mail_unsubscribe($a, rl_mail_token($a));
+    $wpdb->update($s, ['requested_at'=>time()-2*HOUR_IN_SECONDS], ['id'=>$a]);
+    [$a, $fresh] = $subscribe('notify-a@example.test'); rl_mail_confirm($a, $fresh);
+    $count = count($messages); rl_mail_batch();
+    rl_mail_expect(count($messages) === $count && $wpdb->get_var($wpdb->prepare("SELECT status FROM $d WHERE campaign_id=%d", $campaign5)) === 'skipped', 'New consent does not resurrect a queued message from an old subscription');
+    $event6 = $concert(); $campaign6 = rl_mail_queue($event6);
+    $reentered = false;
+    $reentrant = static function ($pre, $mail) use (&$reentered) { if (!$reentered) { $reentered=true; rl_mail_batch(); } return $pre; };
+    add_filter('pre_wp_mail', $reentrant, PHP_INT_MAX-1, 2);
+    $count = count($messages); rl_mail_batch(); remove_filter('pre_wp_mail', $reentrant, PHP_INT_MAX-1);
+    rl_mail_expect(count($messages) === $count+1, 'Concurrent/reentrant workers claim each recipient only once');
+
+    $order = wc_create_order(); $orders[] = $order;
+    $order->set_billing_email('block@example.test');
+    $checkout_fields = Automattic\WooCommerce\Blocks\Package::container()->get(Automattic\WooCommerce\Blocks\Domain\Services\CheckoutFields::class);
+    $checkout_fields->persist_field_for_order('rommelfangen/concert-notifications', true, $order, 'other', false); $order->save();
+    do_action('woocommerce_store_api_checkout_order_processed', $order);
+    rl_mail_expect(rl_mail_subscriber('block@example.test')->status === 'pending', 'Checkout Blocks opt-in requests confirmation using billing email');
+    $count = count($messages); do_action('woocommerce_store_api_checkout_order_processed', $order);
+    rl_mail_expect(count($messages) === $count, 'Repeated checkout processing does not duplicate signup');
+    $classic = wc_create_order(); $orders[] = $classic; $classic->set_billing_email('classic@example.test'); $classic->save();
+    $_POST['rl_concert_notifications']='1';
+    do_action('woocommerce_checkout_order_processed', $classic->get_id(), [], $classic); unset($_POST['rl_concert_notifications']);
+    rl_mail_expect(rl_mail_subscriber('classic@example.test')->status === 'pending', 'Classic checkout opt-in also requires confirmation');
+    $none = wc_create_order(); $orders[]=$none; $none->set_billing_email('no-consent@example.test'); $none->save();
+    do_action('woocommerce_checkout_order_processed', $none->get_id(), [], $none);
+    do_action('woocommerce_store_api_checkout_order_processed', $none);
+    rl_mail_expect(!rl_mail_subscriber('no-consent@example.test'), 'Buying without opt-in never subscribes the customer');
+    $fields = $checkout_fields->get_additional_fields();
+    rl_mail_expect(isset($fields['rommelfangen/concert-notifications']) && !$fields['rommelfangen/concert-notifications']['required'], 'Optional Blocks checkout checkbox is registered');
+    $_SERVER['REQUEST_METHOD']='POST'; $_POST=['email'=>'no-consent-form@example.test', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
+    try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(!rl_mail_subscriber('no-consent-form@example.test'), 'Public form requires explicit consent');
+    $_POST=['email'=>'forged-form@example.test', 'consent'=>'1', 'rl_mail_nonce'=>'forged'];
+    try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(!rl_mail_subscriber('forged-form@example.test'), 'Public form rejects an invalid nonce');
+    $_POST=['email'=>'public-form@example.test', 'consent'=>'1', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
+    try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(rl_mail_subscriber('public-form@example.test')->status === 'pending', 'Public signup endpoint requests confirmation when consent and nonce are valid');
+    $_POST=['email'=>['malformed'], 'consent'=>'1', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
+    try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(rl_mail_input($_POST, 'email') === '', 'Malformed form input is rejected without a fatal error');
+    set_transient($rate_key, 5, HOUR_IN_SECONDS);
+    $_POST=['email'=>'rate-limited@example.test', 'consent'=>'1', 'rl_mail_nonce'=>wp_create_nonce('rl_mail_signup')];
+    try { rl_mail_signup(); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect(!rl_mail_subscriber('rate-limited@example.test'), 'Public signup rate limit prevents additional mail');
+    $_POST=[];
+    $customer_email='customer-' . strtolower(wp_generate_password(10,false)) . '@example.test';
+    $uid=wp_create_user('rl-mail-test-' . wp_generate_password(8,false), wp_generate_password(), $customer_email);
+    if (is_wp_error($uid)) throw new RuntimeException($uid->get_error_message());
+    $users[]=$uid;
+    wp_set_current_user($uid);
+    rl_mail_expect(str_contains(rl_mail_signup_form(), 'value="' . $customer_email . '"') && !str_contains(rl_mail_signup_form(), 'checked'), 'Known customer email is prefilled without preselecting consent');
+    ob_start(); do_action('woocommerce_account_dashboard'); $account=ob_get_clean();
+    rl_mail_expect(str_contains($account, 'rl_mail_account') && str_contains($account, $customer_email), 'Customer dashboard exposes subscription preferences for own email');
+    $before=(int)$wpdb->get_var("SELECT COUNT(*) FROM $c");
+    try { do_action('admin_post_rl_mail_queue'); } catch (RL_Mail_Test_Response $response) {}
+    rl_mail_expect((int)$wpdb->get_var("SELECT COUNT(*) FROM $c") === $before, 'Customers cannot create campaigns through the admin endpoint');
+    $admin_user=new WP_User($uid); $admin_user->set_role('administrator'); wp_set_current_user(0); wp_set_current_user($uid);
+    $_GET=['concert'=>(string)$event];
+    ob_start(); rl_mail_admin(); $admin_page=ob_get_clean(); $_GET=[];
+    rl_mail_expect(str_contains($admin_page, 'notify-a@example.test') && str_contains($admin_page, 'Vorschau') && str_contains($admin_page, 'Bestätigt'), 'Administrator sees campaign preview and consent records in one interface');
+    $export = rl_mail_privacy_export('notify-a@example.test');
+    rl_mail_expect(count($export['data']) > 1 && str_contains(wp_json_encode($export), 'notify-a@example.test'), 'Privacy export includes consent and delivery records');
+    $erasers = apply_filters('wp_privacy_personal_data_erasers', []);
+    $erased = $erasers['rl-concert-notifications']['callback']('notify-a@example.test');
+    rl_mail_expect($erased['items_removed'] && !rl_mail_subscriber('notify-a@example.test') && !$wpdb->get_var($wpdb->prepare("SELECT id FROM $d WHERE subscriber_id=%d", $a)), 'Privacy erasure removes subscription and recipient history');
+    $event7=$concert();
+    rl_mail_expect(is_wp_error(rl_mail_queue($event7)) && !$wpdb->get_var($wpdb->prepare("SELECT id FROM $c WHERE concert_id=%d", $event7)), 'Empty audience does not leave an unusable campaign');
+    for ($i=0; $i<23; $i++) $wpdb->insert($s, ['email'=>'batch-' . $i . '@example.test','status'=>'confirmed','consent'=>'Test fixture','confirmed_at'=>time(),'requested_at'=>time()]);
+    $event8=$concert(); $campaign8=rl_mail_queue($event8);
+    $count=count($messages); rl_mail_batch();
+    rl_mail_expect(count($messages) === $count+20 && (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $d WHERE campaign_id=%d AND status='queued'", $campaign8)) === 3, 'A batch hands off at most 20 messages and retains the remainder');
+    $remaining=$wpdb->get_var($wpdb->prepare("SELECT subscriber_id FROM $d WHERE campaign_id=%d AND status='queued' LIMIT 1", $campaign8));
+    rl_mail_unsubscribe((int)$remaining, rl_mail_token((int)$remaining));
+    rl_mail_batch();
+    rl_mail_expect(count($messages) === $count+22 && (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $d WHERE campaign_id=%d AND status='skipped'", $campaign8)) === 1, 'An unsubscribe between batches cancels the remaining delivery');
+    $wpdb->update($s, ['requested_at'=>time()-8*DAY_IN_SECONDS], ['id'=>$pending]);
+    do_action('rl_mail_cleanup');
+    rl_mail_expect(!rl_mail_subscriber('pending@example.test'), 'Expired unconfirmed addresses are cleaned up');
+    echo "Notification integration checks passed; no external mail sent.\n";
+} finally {
+    remove_filter('wp_die_handler', $die_handler);
+    remove_filter('pre_wp_mail', $capture, PHP_INT_MAX);
+    $_POST=[]; $_REQUEST=[]; $_GET=[];
+    delete_transient($rate_key);
+    if ($original_remote === null) unset($_SERVER['REMOTE_ADDR']); else $_SERVER['REMOTE_ADDR']=$original_remote;
+    wp_set_current_user($original_user);
+    foreach ($orders as $order) $order->delete(true);
+    foreach ($events as $id) wp_delete_post($id, true);
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    foreach ($users as $uid) { if (is_multisite()) wpmu_delete_user($uid); else wp_delete_user($uid); }
+    $wpdb->query("DELETE FROM $d"); $wpdb->query("DELETE FROM $c"); $wpdb->query("DELETE FROM $s");
+    wp_clear_scheduled_hook('rl_mail_batch');
+    ob_end_flush();
+}

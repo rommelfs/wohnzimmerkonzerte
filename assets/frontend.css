@@ -686,3 +686,4 @@ input,select,textarea {
 .rl-shop .woocommerce-message,.rl-shop .woocommerce-error,.rl-shop .woocommerce-info {
   background: var(--surface); color: var(--ink); padding: 1.2rem; margin-block: 1.5rem; border-left: 3px solid var(--accent);
 }
+.rl-mail-signup{max-width:46rem}.rl-mail-signup input[type=email]{width:100%}.rl-mail-signup input[type=checkbox]{margin-right:.5rem;vertical-align:middle}.rl-mail-signup button{white-space:normal;text-align:left}

@@ -51,4 +51,5 @@ $heading_count=0;
 <?php endif; ?>
 </div></section>
 <?php endforeach; ?>
+<section id="benachrichtigungen" class="section wrap"><h2>Keinen Konzertabend verpassen</h2><p>Wir informieren dich, wenn neue Wohnzimmerkonzerte angekündigt werden.</p><?php echo rl_mail_signup_form(); ?></section>
 </main>
