@@ -114,3 +114,7 @@ Unter **Einstellungen → Rommelfangen Concerts** kann die **Konzertstartseite f
 Rückblicke haben ein eigenes Artikellayout mit kleinerer Überschrift, Datum/öffentlichem Ort, Fotos und Text. Einlass und die Kalenderaktion werden dort nicht mehr angeboten. Die weiterführende Aktion führt zur Konzertübersicht. Wenn der Newsletter-Bereich aktiviert ist, steht die Anmeldung zusätzlich direkt unter dem Konzertartikel.
 
 Im Footer wird eine konfigurierte Datenschutz-URL bevorzugt, ersatzweise die veröffentlichte WordPress-Datenschutzseite. Fehlende Links für Impressum und Datenschutz werden berechtigten Administratoren im Konzertbereich angezeigt. Es werden keine rechtlichen Inhalte oder Ziele erfunden. Ein Hinweis zeigt außerdem den WooCommerce-Modus „Demnächst verfügbar“ an. Die tatsächliche Veröffentlichung des Shops bleibt eine bewusste Betriebsentscheidung.
+
+## Hintergrund ab Version 1.7.1
+
+Unter **Einstellungen → Rommelfangen Concerts → Marke & Erscheinungsbild → Hintergrundwirkung** stehen **Sanfte Lichtverläufe** (Standard) und **Ruhige Farbfläche** zur Auswahl. Die Lichtverläufe verwenden die eingestellten Akzent- und Textfarben über den vorhandenen Flächenfarben. Eigene Farben bleiben erhalten. Die Darstellung ist statisch, benötigt keine Bilddateien oder externen Dienste und fügt keine Effekte zur Druckansicht hinzu. Browser ohne Unterstützung für die Farbmischung zeigen die eingestellten Farbflächen.

@@ -91,6 +91,7 @@ function rl_settings_page(): void {
     rl_control('rl_site[logo_id]','Logo',$site['logo_id'],'image');
     rl_control('rl_site[fallback_image_id]','Allgemeines Ersatzbild',$site['fallback_image_id'],'image');
     rl_control('rl_site[font]','Überschriften-Schrift',$site['font'],'select',['serif'=>'Klassische Serifenschrift','sans'=>'Klare serifenlose Schrift','mono'=>'Monospace']);
+    rl_control('rl_site[background_style]','Hintergrundwirkung',$site['background_style'],'select',['atmosphere'=>'Sanfte Lichtverläufe','plain'=>'Ruhige Farbfläche']);
     rl_control('rl_site[color_scheme]','Darstellung der Formulare',$site['color_scheme'],'select',['dark'=>'Dunkel','light'=>'Hell']);
     rl_control('rl_site[font_size]','Grundschriftgröße (16–22 px)',$site['font_size'],'number');
     rl_control('rl_site[image_fit]','Bilddarstellung',$site['image_fit'],'select',['cover'=>'Fläche ausfüllen / zuschneiden','contain'=>'Vollständiges Bild zeigen']);

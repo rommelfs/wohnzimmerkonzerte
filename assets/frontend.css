@@ -718,3 +718,19 @@ input,select,textarea {
 @media(max-width:700px) { .rl-review .ticket-box { padding:1.25rem; } .rl-photo-gallery img { height:auto; } }
 .rl-concert-detail h2 { font-size:clamp(1.5rem,2.7vw,2.25rem); }
 .rl-concert-detail h3 { font-size:clamp(1.25rem,2vw,1.65rem); }
+
+/* Soft, static light washes follow the configured palette without external assets. */
+@media screen {
+  body.rl-concert-view.rl-background-atmosphere {
+    background-image:
+      radial-gradient(ellipse at 8% 0%,color-mix(in srgb,var(--accent) 11%,transparent),transparent 55%),
+      radial-gradient(ellipse at 100% 70%,color-mix(in srgb,var(--muted) 6%,transparent),transparent 60%);
+    background-size:100% 1100px,100% 1600px;
+    background-repeat:no-repeat;
+  }
+  .rl-background-atmosphere .rl-themed:not(.card) {
+    background-image:
+      radial-gradient(ellipse at 0% 0%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 65%),
+      linear-gradient(135deg,color-mix(in srgb,var(--section-ink,var(--ink)) 3%,transparent),transparent 55%);
+  }
+}

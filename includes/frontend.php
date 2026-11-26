@@ -85,7 +85,7 @@ add_action('wp_enqueue_scripts',function () {
     wp_enqueue_style('rl-concerts',plugins_url('assets/frontend.css',RL_PLUGIN_FILE),[],RL_VERSION);
     wp_add_inline_style('rl-concerts',rl_design_css());
 },100);
-add_filter('body_class',function ($classes) { if (rl_is_concert_view()) $classes[]='rl-concert-view'; if (rl_is_ticket_shop()) $classes[]='rl-shop-view';return $classes; });
+add_filter('body_class',function ($classes) { if (rl_is_concert_view()) { $classes[]='rl-concert-view'; if ((rl_site()['background_style']??'atmosphere')==='atmosphere') $classes[]='rl-background-atmosphere'; } if (rl_is_ticket_shop()) $classes[]='rl-shop-view';return $classes; });
 function rl_section_button(array $section, string $fallback=''): void {
     $url=$section['button_url'] ?: $fallback;
     if ($section['button_label'] && $url) echo '<a class="button" href="'.esc_url(rl_nav_url($url)).'">'.esc_html($section['button_label']).'</a>';
