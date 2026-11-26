@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-const RL_MAIL_SCHEMA = '6';
+const RL_MAIL_SCHEMA = '7';
 function rl_mail_table(string $name): string { global $wpdb; return $wpdb->prefix . 'rl_mail_' . $name; }
 function rl_mail_input(array $input, string $key): string { return isset($input[$key]) && is_string($input[$key]) ? wp_unslash($input[$key]) : ''; }
 function rl_mail_consent(): string { return 'Ich möchte per E-Mail über Wohnzimmerkonzerte und Neuigkeiten zu diesen Abenden informiert werden. Ich kann mich jederzeit abmelden.'; }
@@ -23,6 +23,7 @@ function rl_mail_install(): void {
         token_hash varchar(64) NOT NULL DEFAULT '',
         requested_at bigint(20) unsigned NOT NULL DEFAULT 0,
         token_created_at bigint(20) unsigned NOT NULL DEFAULT 0,
+        reminder_token_hash varchar(64) NOT NULL DEFAULT '',
         reminded_at bigint(20) unsigned NOT NULL DEFAULT 0,
         confirmation_status varchar(20) NOT NULL DEFAULT '',
         admin_notice_status varchar(20) NOT NULL DEFAULT '',
@@ -71,7 +72,7 @@ function rl_mail_install(): void {
     foreach ([$subscribers, $campaigns, $deliveries] as $table) {
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table))) !== $table) return;
     }
-    foreach ([$subscribers=>['first_name','last_name','pending_consent','token_created_at','reminded_at','confirmation_status','admin_notice_status'], $campaigns=>['body_format','text_body']] as $table=>$columns) {
+    foreach ([$subscribers=>['first_name','last_name','pending_consent','token_created_at','reminded_at','reminder_token_hash','confirmation_status','admin_notice_status'], $campaigns=>['body_format','text_body']] as $table=>$columns) {
         foreach ($columns as $column) if (!$wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s", $column))) return;
     }
     // dbDelta adds columns/indexes but does not remove the old one-campaign-per-concert index.
@@ -104,12 +105,12 @@ function rl_mail_subscribe(string $email, string $source, array $profile = []): 
     $row = rl_mail_subscriber($email);
     if ($row && (($row->status === 'confirmed' && $row->consent === rl_mail_consent()) || (int)$row->requested_at > time() - HOUR_IN_SECONDS)) return;
     $token = bin2hex(random_bytes(32));
-    $data = ['status' => 'pending', 'token_hash' => hash('sha256', $token), 'requested_at' => time(), 'token_created_at'=>time(), 'reminded_at'=>0, 'confirmation_status'=>'sending', 'admin_notice_status'=>'', 'confirmed_at' => 0,
+    $data = ['status' => 'pending', 'token_hash' => hash('sha256', $token), 'requested_at' => time(), 'token_created_at'=>time(), 'reminder_token_hash'=>'', 'reminded_at'=>0, 'confirmation_status'=>'sending', 'admin_notice_status'=>'', 'confirmed_at' => 0,
         'source' => sanitize_key($source), 'consent' => rl_mail_consent(), 'pending_consent'=>rl_mail_consent()] + rl_mail_profile($email, $profile);
     if ($row) {
         if ($row->status === 'confirmed') {
             // An upgrade request cannot suspend an existing subscription or overwrite its profile.
-            $data=['status'=>'confirmed','token_hash'=>hash('sha256',$token),'requested_at'=>time(),'token_created_at'=>time(),'reminded_at'=>0,'confirmation_status'=>'sending','pending_consent'=>rl_mail_consent()];
+            $data=['status'=>'confirmed','token_hash'=>hash('sha256',$token),'requested_at'=>time(),'token_created_at'=>time(),'reminder_token_hash'=>'','reminded_at'=>0,'confirmation_status'=>'sending','pending_consent'=>rl_mail_consent()];
         } else $data['generation'] = (int)$row->generation + 1;
         // Compare-and-swap protects a concurrent confirmation or duplicate signup.
         $ok = $wpdb->update($table, $data, ['id' => $row->id, 'generation' => $row->generation, 'status' => $row->status, 'token_hash'=>$row->token_hash, 'requested_at'=>$row->requested_at]);
@@ -123,19 +124,20 @@ function rl_mail_subscribe(string $email, string $source, array $profile = []): 
     if (!$saved || !hash_equals(hash('sha256',$token),(string)$saved->token_hash)) return;
     $ok=rl_mail_send_confirmation($saved,$token);
     $wpdb->update($table,['confirmation_status'=>$ok?'sent':'failed'],['id'=>$id,'token_hash'=>hash('sha256',$token)]);
+    rl_mail_reminder_schedule();
 }
 function rl_mail_confirm(int $id, string $token): bool {
     global $wpdb;
     if (!preg_match('/^[a-f0-9]{64}$/D', $token)) return false;
     $row=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.rl_mail_table('subscribers').' WHERE id=%d',$id));
-    $ok=(bool)$wpdb->query($wpdb->prepare('UPDATE ' . rl_mail_table('subscribers') . " SET generation=generation+IF(status='pending',1,0), status='confirmed', confirmation_status='sent', confirmed_at=%d, token_hash='', consent=COALESCE(NULLIF(pending_consent,''),consent), pending_consent='' WHERE id=%d AND status IN ('pending','confirmed') AND COALESCE(NULLIF(token_created_at,0),requested_at)>=%d AND token_hash=%s", time(), $id, time() - 2 * DAY_IN_SECONDS, hash('sha256', $token)));
+    $ok=(bool)$wpdb->query($wpdb->prepare('UPDATE ' . rl_mail_table('subscribers') . " SET generation=generation+IF(status='pending',1,0), status='confirmed', confirmation_status='sent', confirmed_at=%d, token_hash='', reminder_token_hash='', consent=COALESCE(NULLIF(pending_consent,''),consent), pending_consent='' WHERE id=%d AND status IN ('pending','confirmed') AND ((COALESCE(NULLIF(token_created_at,0),requested_at)>=%d AND token_hash=%s) OR (reminded_at>=%d AND reminder_token_hash=%s))", time(), $id, time() - 2 * DAY_IN_SECONDS, hash('sha256', $token), time() - 2 * DAY_IN_SECONDS, hash('sha256', $token)));
     if ($ok && $row && $row->status==='pending') rl_mail_admin_signup_notice($id);
     return $ok;
 }
 function rl_mail_unsubscribe(int $id, string $token): bool {
     global $wpdb;
     if (!hash_equals(rl_mail_token($id), $token)) return false;
-    $wpdb->update(rl_mail_table('subscribers'), ['status' => 'unsubscribed', 'token_hash' => '', 'pending_consent'=>'', 'unsubscribed_at' => time()], ['id' => $id]);
+    $wpdb->update(rl_mail_table('subscribers'), ['status' => 'unsubscribed', 'token_hash' => '', 'reminder_token_hash'=>'', 'pending_consent'=>'', 'unsubscribed_at' => time()], ['id' => $id]);
     return true;
 }
 function rl_mail_page(string $message, string $form = '', string $title = 'Konzertbenachrichtigungen', string $state = ''): void {

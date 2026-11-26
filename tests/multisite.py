@@ -96,8 +96,10 @@ try:
     check("rl_setting('youtube') === 'https://example.test/edited-b'", 'Later updates preserve edited plugin settings', b)
     cid, c = site('c')
     check("shortcode_exists('rommelfangen_homepage') && get_option('rl_rewrite_version') === RL_REWRITE_VERSION", 'New network website initializes on first request', c)
+    wp('eval', "wp_schedule_single_event(time()+HOUR_IN_SECONDS,'rl_mail_reminders');", url=c)
     wp('plugin', 'deactivate', 'wohnzimmerkonzerte', '--network')
     network_enabled = False
+    check("!wp_next_scheduled('rl_mail_reminders')", 'Network deactivation removes signup reminder events on other websites', c)
     check("!function_exists('rl_events') && get_option('rl_rewrite_version', null) === null", 'Network deactivation removes routing marker from other website', b)
     check("count(rl_events()) === 1 && rl_setting('instagram') === 'https://example.test/only-a'", 'Site activation and data survive network deactivation', a)
     wp('plugin', 'deactivate', 'wohnzimmerkonzerte', url=a)

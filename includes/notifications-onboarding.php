@@ -19,7 +19,7 @@ function rl_mail_send_confirmation(object $row,string $token,bool $reminder=fals
 function rl_mail_reminder_error(object $row): ?WP_Error {
     if ($row->status!=='pending') return new WP_Error('status','Nur noch nicht bestätigte Anmeldungen können erinnert werden.');
     if ((int)$row->reminded_at) return new WP_Error('reminded','Für diese Anmeldung wurde bereits ein erneuter Versand angefordert.');
-    if ((int)$row->requested_at>time()-DAY_IN_SECONDS) return new WP_Error('early','Eine einmalige Erinnerung ist frühestens 24 Stunden nach der Anmeldung möglich.');
+    if ((int)$row->requested_at>time()-HOUR_IN_SECONDS) return new WP_Error('early','Eine einmalige Erinnerung ist frühestens eine Stunde nach der Anmeldung möglich.');
     if ((int)$row->requested_at<time()-5*DAY_IN_SECONDS) return new WP_Error('old','Diese Anmeldung ist zu alt für eine Erinnerung. Bitte die Person bei einem persönlichen Kontakt auf das Anmeldeformular hinweisen.');
     return null;
 }
@@ -29,14 +29,35 @@ function rl_mail_remind(int $id) {
     if (!$row) return new WP_Error('missing','Anmeldung nicht gefunden.');
     if ($error=rl_mail_reminder_error($row)) return $error;
     $token=bin2hex(random_bytes(32));$hash=hash('sha256',$token);$now=time();
-    // A single atomic claim prevents two admin requests from sending duplicate reminders.
-    $claimed=$wpdb->update($table,['token_hash'=>$hash,'token_created_at'=>$now,'reminded_at'=>$now,'confirmation_status'=>'sending'],['id'=>$id,'status'=>'pending','generation'=>$row->generation,'token_hash'=>$row->token_hash,'requested_at'=>$row->requested_at,'reminded_at'=>0]);
+    // A single atomic claim prevents concurrent automatic or manual requests from sending duplicate reminders.
+    $claimed=$wpdb->update($table,['reminder_token_hash'=>$hash,'reminded_at'=>$now,'confirmation_status'=>'sending'],['id'=>$id,'status'=>'pending','generation'=>$row->generation,'token_hash'=>$row->token_hash,'requested_at'=>$row->requested_at,'reminded_at'=>0]);
     if (!$claimed) return new WP_Error('changed','Die Anmeldung wurde inzwischen verändert. Bitte die Empfängerliste neu laden.');
     // Preserve the original request time, source, profile and exact consent scope.
-    $ok=rl_mail_send_confirmation($row,$token,true);
-    $wpdb->update($table,['confirmation_status'=>$ok?'sent':'failed'],['id'=>$id,'token_hash'=>$hash]);
+    try { $ok=rl_mail_send_confirmation($row,$token,true); } catch (Throwable $error) { $ok=false; }
+    $wpdb->update($table,['confirmation_status'=>$ok?'sent':'failed'],['id'=>$id,'reminder_token_hash'=>$hash]);
     return $ok?true:new WP_Error('mail','Die Erinnerung konnte nicht an den Mailserver übergeben werden. Bitte den Mailweg prüfen; es erfolgt keine automatische Wiederholung.');
 }
+// One site-local event follows the earliest eligible request; init also recovers old pending entries.
+function rl_mail_reminder_schedule(): void {
+    if (get_option('rl_mail_schema')!==RL_MAIL_SCHEMA) return;
+    global $wpdb;
+    $requested=$wpdb->get_var($wpdb->prepare('SELECT MIN(requested_at) FROM '.rl_mail_table('subscribers')." WHERE status='pending' AND reminded_at=0 AND requested_at>=%d",time()-5*DAY_IN_SECONDS));
+    $scheduled=wp_next_scheduled('rl_mail_reminders');
+    if ($requested===null) { if ($scheduled) wp_clear_scheduled_hook('rl_mail_reminders');return; }
+    $due=max(time()+5,(int)$requested+HOUR_IN_SECONDS);
+    if (!$scheduled || $scheduled>$due+5) {
+        if ($scheduled) wp_clear_scheduled_hook('rl_mail_reminders');
+        wp_schedule_single_event($due,'rl_mail_reminders');
+    }
+}
+function rl_mail_reminder_tick(): void {
+    global $wpdb;
+    $ids=$wpdb->get_col($wpdb->prepare('SELECT id FROM '.rl_mail_table('subscribers')." WHERE status='pending' AND reminded_at=0 AND requested_at<=%d AND requested_at>=%d ORDER BY requested_at,id LIMIT 20",time()-HOUR_IN_SECONDS,time()-5*DAY_IN_SECONDS));
+    try { foreach ($ids as $id) rl_mail_remind((int)$id); }
+    finally { rl_mail_reminder_schedule(); }
+}
+add_action('rl_mail_reminders','rl_mail_reminder_tick');
+add_action('init','rl_mail_reminder_schedule',26);
 function rl_mail_registration_options(): array {
     return array_replace(['notify_admin'=>true,'admin_email'=>''],(array)get_option('rl_mail_registration',[]));
 }
@@ -77,7 +98,7 @@ function rl_mail_reminder_action(object $row): void {
     if ($row->status!=='pending') return;
     $error=rl_mail_reminder_error($row);
     if ($error) { echo '<p class="description">'.esc_html($error->get_error_message()).'</p>';return; }
-    echo '<details><summary>Einmalige Erinnerung senden</summary><p>Eine neue Bestätigungs-E-Mail an '.esc_html($row->email).'. Keine Konzertwerbung. Der alte Link wird ersetzt; die Anmeldung bleibt bis zum Linkklick offen.</p><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="rl_mail_remind"><input type="hidden" name="subscriber" value="'.(int)$row->id.'">';
+    echo '<details><summary>Einmalige Erinnerung senden</summary><p>Eine neue Bestätigungs-E-Mail an '.esc_html($row->email).'. Keine Konzertwerbung. Auch der alte Link bleibt bis zu seinem Ablauf gültig; die Anmeldung bleibt bis zum Linkklick offen.</p><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="rl_mail_remind"><input type="hidden" name="subscriber" value="'.(int)$row->id.'">';
     wp_nonce_field('rl_mail_remind_'.$row->id);echo '<button class="button" type="submit">Bestätigungslink erneut senden</button></form></details>';
 }
 add_action('admin_post_rl_mail_remind',static function () {

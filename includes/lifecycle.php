@@ -27,6 +27,7 @@ function rl_activate(bool $network_wide = false): void {
 function rl_deactivate(bool $network_wide = false): void {
     wp_clear_scheduled_hook('rl_mail_batch');
     wp_clear_scheduled_hook('rl_mail_cleanup');
+    wp_clear_scheduled_hook('rl_mail_reminders');
     wp_clear_scheduled_hook('rl_ops_tick');
     wp_clear_scheduled_hook('rl_waitlist_tick');
     unregister_post_type('rl_concert');
@@ -40,6 +41,7 @@ function rl_deactivate(bool $network_wide = false): void {
                 switch_to_blog((int)$id);
                 wp_clear_scheduled_hook('rl_mail_batch');
                 wp_clear_scheduled_hook('rl_mail_cleanup');
+                wp_clear_scheduled_hook('rl_mail_reminders');
                 wp_clear_scheduled_hook('rl_ops_tick');
                 wp_clear_scheduled_hook('rl_waitlist_tick');
                 restore_current_blog();
