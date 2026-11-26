@@ -88,7 +88,11 @@ function rl_settings_page(): void {
     foreach (get_pages(['post_status'=>'publish']) as $page) if (has_shortcode($page->post_content,'rommelfangen_tickets')) $pages[$page->ID]=$page->post_title;
     rl_control('rl_site[shop_page_id]','Ticketshop-Seite',$site['shop_page_id'],'select',$pages);
     rl_control('rl_site[commerce_shell]','Eigenes Design auch für Warenkorb und Kasse verwenden',$site['commerce_shell'],'checkbox');
-    rl_control('rl_site[logo_id]','Logo',$site['logo_id'],'image');
+    rl_control('rl_site[logo_id]','Logo im Kopfbereich',$site['logo_id'],'image');
+    rl_control('rl_site[footer_logo_id]','Logo im Fußbereich (optional; sonst Kopfbereich-Logo)',$site['footer_logo_id'],'image');
+    rl_control('rl_site[logo_mode]','Logo-Darstellung',$site['logo_mode'],'select',['combined'=>'Bildzeichen mit zusätzlichem Website-Namen','logo-only'=>'Nur Logo (Schriftzug ist im Bild enthalten)','text-only'=>'Nur Website-Name und Untertitel']);
+    foreach (['logo_width'=>'Maximale Logo-Breite im Kopfbereich (80–480 px)','logo_height'=>'Maximale Logo-Höhe (40–240 px)','logo_mobile_width'=>'Maximale Logo-Breite auf Smartphones (80–320 px)','footer_logo_width'=>'Maximale Logo-Breite im Fußbereich (80–400 px)'] as $key=>$label) rl_control('rl_site['.$key.']',$label,$site[$key],'number');
+    echo '<p class="description">Transparente PNG-Dateien verwenden. Für Logos mit integriertem Schriftzug „Nur Logo“ wählen. Für den Kopfbereich empfiehlt sich die horizontale Variante, für den Fußbereich auch das Hauptlogo. Ohne gültiges Bild wird immer der Website-Name angezeigt.</p>';
     rl_control('rl_site[fallback_image_id]','Allgemeines Ersatzbild',$site['fallback_image_id'],'image');
     rl_control('rl_site[font]','Überschriften-Schrift',$site['font'],'select',['serif'=>'Klassische Serifenschrift','sans'=>'Klare serifenlose Schrift','mono'=>'Monospace']);
     rl_control('rl_site[background_style]','Hintergrundwirkung',$site['background_style'],'select',['atmosphere'=>'Sanfte Lichtverläufe','plain'=>'Ruhige Farbfläche']);

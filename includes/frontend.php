@@ -31,6 +31,16 @@ function rl_card(int $id, int $timestamp=0): void {
     <?php
 }
 function rl_rich_text(string $html): void { echo wp_kses_post(wpautop(do_shortcode($html))); }
+function rl_brand(bool $footer=false): void {
+    $site=rl_site();$id=$footer && wp_attachment_is_image((int)$site['footer_logo_id'])?(int)$site['footer_logo_id']:(int)$site['logo_id'];
+    $show_image=$site['logo_mode']!=='text-only' && $id && wp_attachment_is_image($id);
+    $show_text=!$show_image || $site['logo_mode']!=='logo-only';
+    $label=implode(' · ',array_filter([$site['brand'],$site['subtitle']],static fn($value)=>$value!==''));
+    echo '<a class="brand'.($show_image?' rl-brand-has-logo':'').(!$show_text?' rl-brand-logo-only':'').'" href="'.esc_url(rl_concert_home_url()).'" aria-label="'.esc_attr($label).'">';
+    if ($show_image) echo wp_get_attachment_image($id,'large',false,['class'=>'brand-logo','alt'=>'','loading'=>$footer?'lazy':'eager']);
+    if ($show_text) echo '<span class="brand-copy"><span class="brand-name">'.esc_html($site['brand']).'</span><span class="brand-subtitle">'.esc_html($site['subtitle']).'</span></span>';
+    echo '</a>';
+}
 function rl_header(): void { require RL_PLUGIN_DIR.'templates/header.php'; }
 function rl_footer(): void { require RL_PLUGIN_DIR.'templates/footer.php'; }
 function rl_shortcode_page(string $shortcode): bool {
@@ -70,6 +80,7 @@ function rl_design_css(): string {
     foreach ($s['colors'] as $key=>$value) if ($safe=sanitize_hex_color($value)) $css[]='--'.str_replace('_','-',$key).':'.$safe;
     $fonts=['serif'=>'Georgia,"Times New Roman",serif','sans'=>'system-ui,sans-serif','mono'=>'ui-monospace,monospace'];
     $css[]='--heading-font:'.($fonts[$s['font']] ?? $fonts['serif']);
+    foreach (['logo_width'=>'logo-width','logo_height'=>'logo-height','logo_mobile_width'=>'logo-mobile-width','footer_logo_width'=>'footer-logo-width'] as $key=>$variable) $css[]='--'.$variable.':'.(int)$s[$key].'px';
     $css[]='--page-width:'.max(960,min(1600,(int)$s['width'])).'px';
     $css[]='--radius:'.max(0,min(40,(int)$s['radius'])).'px';
     $css[]='--section-space:'.max(24,min(140,(int)$s['spacing'])).'px';

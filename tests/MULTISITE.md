@@ -24,3 +24,5 @@ Ab Version 1.6 kommen drei Prüfgruppen hinzu: `tests/operations.php` prüft his
 Ab Version 1.7 prüft `tests/editorial.php` ergänzend Textwechsel vor/nach einem Konzert, erhaltene Altinhalte, Titel/Untertitel, Galerie und Bildunterschriften, Videoposter einschließlich alter Playlists, Unterseiten-Navigation, Datenschutzseiten und Redaktionsrechte.
 
 Ab Version 1.8 prüft `tests/registration.php` die Migration offener Anmeldungen mit erhaltenen Altlinks, Ein-Klick-Bestätigung (GET), unveränderte Einwilligungen, begrenzte einmalige Erinnerungen und genau eine konfigurierbare Admin-Benachrichtigung je Abschluss. Mailannahme und Fehler werden abgefangen; echte Nachrichten werden nicht versendet. Reine HEAD-Abfragen bestätigen weiterhin nicht, Abmeldungen benötigen weiterhin die ausdrückliche Bestätigung.
+
+Ab Version 1.9 prüft `tests/branding.php` getrennte Kopf-/Fußlogos, Logo-/Textmodi, zugängliche Bildlinks, Ersatzdarstellung bei gelöschten Bildern sowie erhaltene Alt-Einstellungen und begrenzte Größen.

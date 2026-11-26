@@ -124,3 +124,17 @@ Unter **Einstellungen → Rommelfangen Concerts → Marke & Erscheinungsbild →
 Die Bildansicht hält die Fotos einer Galerie zusammen: Vor-/Zurück-Buttons und Pfeiltasten blättern, auf Touchscreens ist horizontales Wischen möglich. Nach dem letzten Foto folgt wieder das erste. Bildzähler und Bildunterschrift zeigen die aktuelle Position. Escape, Schließen-Button oder ein Klick außerhalb der Bildansicht schließen sie; der Tastaturfokus kehrt zum geöffneten Vorschaubild zurück. Bei einer Galerie mit nur einem Foto entfallen die Blätterbuttons. Ein nicht geladenes Bild blockiert das weitere Blättern nicht.
 
 Die Beschriftungen stehen unter **Konzerte → Website-Texte**. Im Zählertext die Platzhalter `{current}` und `{total}` erhalten. Es werden keine externen Galerie-Dienste oder Bibliotheken geladen.
+
+## Logo in Kopf- und Fußbereich ab Version 1.9
+
+Unter **Einstellungen → Rommelfangen Concerts → Marke & Erscheinungsbild** stehen eigene Bildauswahlen für Kopf- und Fußbereich bereit. Ohne eigenes gültiges Footer-Logo wird das Kopfbereich-Logo verwendet.
+
+**Logo-Darstellung** bietet drei Möglichkeiten:
+
+- **Bildzeichen mit zusätzlichem Website-Namen:** für Symbole ohne eigene Schrift; Name und Untertitel bleiben als bearbeitbarer Text daneben sichtbar.
+- **Nur Logo (Schriftzug ist im Bild enthalten):** für die Haupt- oder horizontale Wortmarke; zusätzlicher Text wird ausgeblendet.
+- **Nur Website-Name und Untertitel:** klassische Textdarstellung ohne Logo.
+
+Die maximale Logo-Breite für Desktop, Smartphone und Footer sowie die maximale Höhe lassen sich einstellen. Bilder werden proportional und vollständig dargestellt. Ein fehlendes Logo führt zum sichtbaren Website-Namen zurück. Der Link besitzt auch in der reinen Bilddarstellung einen zugänglichen Namen und führt zur Konzertstartseite. Bestehende Logo-plus-Text-Einstellungen bleiben erhalten.
+
+Für die dunkle Konzertwebsite empfiehlt sich ein transparentes horizontales Logo mit heller Schrift. Startwerte: Kopfbereich 280 px, maximale Höhe 140 px, Smartphone 220 px, Footer 200 px. Dateien aus dem Logo-Paket zuerst in die Mediathek hochladen; das Paket wird nicht automatisch in echte Website-Inhalte importiert.

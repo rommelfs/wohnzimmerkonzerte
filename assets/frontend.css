@@ -789,3 +789,14 @@ html.rl-gallery-open { overflow:hidden; }
 .rl-mail-back { margin-top:2rem; }
 .rl-mail-steps { max-width:46rem; font-size:.95rem; }
 .rl-mail-complete { border-top:4px solid var(--accent); margin-top:2rem; }
+
+/* Logo images and their wordmarks are selectable independently of the site theme. */
+.brand.rl-brand-has-logo { display:flex; align-items:center; gap:1rem; max-width:100%; }
+.brand .brand-copy { font:inherit; letter-spacing:normal; text-transform:none; color:inherit; margin:0; }
+.brand.rl-brand-has-logo .brand-logo { width:auto; height:auto; max-width:min(var(--logo-width,240px),100%); max-height:var(--logo-height,140px); object-fit:contain; margin:0; }
+.site-footer .brand.rl-brand-has-logo .brand-logo { max-width:min(var(--footer-logo-width,200px),100%); }
+@media(max-width:600px) {
+  .brand.rl-brand-has-logo .brand-logo { max-width:min(var(--logo-mobile-width,200px),100%); max-height:min(var(--logo-height,140px),140px); }
+  .brand.rl-brand-has-logo:not(.rl-brand-logo-only) .brand-logo { max-width:min(var(--logo-mobile-width,200px),32vw); }
+  .brand.rl-brand-has-logo .brand-copy { min-width:0; }
+}
