@@ -1,6 +1,7 @@
 jQuery(function ($) {
   function colors(root) { $(root).find('.rl-color').not('.wp-color-picker').wpColorPicker(); }
   colors(document);
+  $(document).on('input change','.rl-range-control',function () { $(this).attr('aria-valuetext',this.value+' Pixel').closest('.rl-range').find('output').text(this.value+' px'); });
   function suspendEditors(item) {
     if (!window.tinyMCE) return;
     $(item).find('textarea').each(function () { const editor=tinyMCE.get(this.id); if (editor) { editor.save(); editor.remove(); this.dataset.rlEditor='1'; } });

@@ -138,3 +138,9 @@ Unter **Einstellungen → Rommelfangen Concerts → Marke & Erscheinungsbild** s
 Die maximale Logo-Breite für Desktop, Smartphone und Footer sowie die maximale Höhe lassen sich einstellen. Bilder werden proportional und vollständig dargestellt. Ein fehlendes Logo führt zum sichtbaren Website-Namen zurück. Der Link besitzt auch in der reinen Bilddarstellung einen zugänglichen Namen und führt zur Konzertstartseite. Bestehende Logo-plus-Text-Einstellungen bleiben erhalten.
 
 Für die dunkle Konzertwebsite empfiehlt sich ein transparentes horizontales Logo mit heller Schrift. Startwerte: Kopfbereich 280 px, maximale Höhe 140 px, Smartphone 220 px, Footer 200 px. Dateien aus dem Logo-Paket zuerst in die Mediathek hochladen; das Paket wird nicht automatisch in echte Website-Inhalte importiert.
+
+### Abstand zwischen Logo und Menü ab Version 1.9.1
+
+Unter **Marke & Erscheinungsbild** steuert der Schieberegler **Abstand zwischen Logo und Menü (Desktop)** den horizontalen Abstand von 16 bis 160 px; Standard sind 56 px. Der Wert wird während des Schiebens angezeigt und mit **Website-Einstellungen speichern** übernommen. Das Menü schließt direkt an das Logo an. Bei wenig Platz bricht es darunter um; auf Smartphones bleibt der vertikale Abstand bei 24 px. Kopf- und Fußbereich behalten ihre getrennten Logo-Auswahlen.
+
+Für die horizontale Logo-Variante bieten sich 320 px maximale Breite und 110 px maximale Höhe an, für Smartphones 220 px Breite. Vorhandene Größen und gewählte Logo-Dateien werden durch das Update nicht verändert.

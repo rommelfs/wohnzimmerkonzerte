@@ -81,6 +81,7 @@ function rl_design_css(): string {
     $fonts=['serif'=>'Georgia,"Times New Roman",serif','sans'=>'system-ui,sans-serif','mono'=>'ui-monospace,monospace'];
     $css[]='--heading-font:'.($fonts[$s['font']] ?? $fonts['serif']);
     foreach (['logo_width'=>'logo-width','logo_height'=>'logo-height','logo_mobile_width'=>'logo-mobile-width','footer_logo_width'=>'footer-logo-width'] as $key=>$variable) $css[]='--'.$variable.':'.(int)$s[$key].'px';
+    $css[]='--header-menu-gap:'.max(16,min(160,(int)$s['header_menu_gap'])).'px';
     $css[]='--page-width:'.max(960,min(1600,(int)$s['width'])).'px';
     $css[]='--radius:'.max(0,min(40,(int)$s['radius'])).'px';
     $css[]='--section-space:'.max(24,min(140,(int)$s['spacing'])).'px';

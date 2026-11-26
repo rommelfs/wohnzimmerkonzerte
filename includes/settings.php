@@ -32,6 +32,8 @@ function rl_control(string $name, string $label, $value, string $type='text', ar
     if ($type==='image') {
         echo '<div class="rl-media"><input id="'.esc_attr($id).'" class="rl-image-id" type="hidden" name="'.esc_attr($name).'" value="'.esc_attr((string)$value).'">';
         echo '<div class="rl-media-preview">'.($value ? wp_get_attachment_image((int)$value,'thumbnail') : '').'</div><button type="button" class="button rl-media-select">Bild auswählen</button> <button type="button" class="button rl-media-clear">Entfernen</button></div>';
+    } elseif ($type==='range') {
+        echo '<div class="rl-range"><input class="rl-range-control" type="range" id="'.esc_attr($id).'" name="'.esc_attr($name).'" min="'.(int)($choices['min']??0).'" max="'.(int)($choices['max']??100).'" step="'.(int)($choices['step']??1).'" value="'.(int)$value.'" aria-valuetext="'.(int)$value.' Pixel"><output for="'.esc_attr($id).'">'.(int)$value.' px</output></div>';
     } elseif ($type==='select') {
         echo '<select id="'.esc_attr($id).'" name="'.esc_attr($name).'">';
         foreach ($choices as $key=>$text) echo '<option value="'.esc_attr((string)$key).'" '.selected((string)$value,(string)$key,false).'>'.esc_html($text).'</option>';
@@ -92,6 +94,8 @@ function rl_settings_page(): void {
     rl_control('rl_site[footer_logo_id]','Logo im Fußbereich (optional; sonst Kopfbereich-Logo)',$site['footer_logo_id'],'image');
     rl_control('rl_site[logo_mode]','Logo-Darstellung',$site['logo_mode'],'select',['combined'=>'Bildzeichen mit zusätzlichem Website-Namen','logo-only'=>'Nur Logo (Schriftzug ist im Bild enthalten)','text-only'=>'Nur Website-Name und Untertitel']);
     foreach (['logo_width'=>'Maximale Logo-Breite im Kopfbereich (80–480 px)','logo_height'=>'Maximale Logo-Höhe (40–240 px)','logo_mobile_width'=>'Maximale Logo-Breite auf Smartphones (80–320 px)','footer_logo_width'=>'Maximale Logo-Breite im Fußbereich (80–400 px)'] as $key=>$label) rl_control('rl_site['.$key.']',$label,$site[$key],'number');
+    rl_control('rl_site[header_menu_gap]','Abstand zwischen Logo und Menü (Desktop)',$site['header_menu_gap'],'range',['min'=>16,'max'=>160,'step'=>4]);
+    echo '<p class="description">Das Menü steht neben dem Logo; bei wenig Platz rückt es darunter. Der Regler steuert den horizontalen Abstand (Standard: 56 px). Auf Smartphones bleibt der vertikale Abstand kompakt.</p>';
     echo '<p class="description">Transparente PNG-Dateien verwenden. Für Logos mit integriertem Schriftzug „Nur Logo“ wählen. Für den Kopfbereich empfiehlt sich die horizontale Variante, für den Fußbereich auch das Hauptlogo. Ohne gültiges Bild wird immer der Website-Name angezeigt.</p>';
     rl_control('rl_site[fallback_image_id]','Allgemeines Ersatzbild',$site['fallback_image_id'],'image');
     rl_control('rl_site[font]','Überschriften-Schrift',$site['font'],'select',['serif'=>'Klassische Serifenschrift','sans'=>'Klare serifenlose Schrift','mono'=>'Monospace']);

@@ -3,3 +3,7 @@
 .rl-gallery-items li { max-width:180px; padding:.5rem; background:#f0f0f1; }
 .rl-gallery-items img { display:block; max-width:100%; height:120px; object-fit:contain; margin-bottom:.5rem; }
 #rl_editorial .rl-field { margin-block:1rem; }
+
+.rl-range { display:flex; align-items:center; gap:.75rem; }
+.rl-range input[type="range"] { width:100%; max-width:22rem; }
+.rl-range output { min-width:4rem; font-variant-numeric:tabular-nums; }

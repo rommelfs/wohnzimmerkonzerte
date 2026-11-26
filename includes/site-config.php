@@ -50,7 +50,7 @@ function rl_site_defaults(): array {
         $sections[] = rl_section_defaults($type, ['upcoming'=>'konzerte','about'=>'ueber-uns','past'=>'rueckblicke','gift'=>'gutscheine','testimonials'=>'stimmen','newsletter'=>'benachrichtigungen','faq'=>'fragen'][$type] ?? $type);
     }
     return [
-        'brand'=>'Rommelfangen', 'subtitle'=>'Living Room Concerts', 'logo_id'=>0, 'footer_logo_id'=>0, 'logo_mode'=>'combined', 'logo_width'=>240, 'logo_height'=>140, 'logo_mobile_width'=>200, 'footer_logo_width'=>200, 'fallback_image_id'=>0,
+        'brand'=>'Rommelfangen', 'subtitle'=>'Living Room Concerts', 'logo_id'=>0, 'footer_logo_id'=>0, 'logo_mode'=>'combined', 'logo_width'=>240, 'logo_height'=>140, 'logo_mobile_width'=>200, 'footer_logo_width'=>200, 'header_menu_gap'=>56, 'fallback_image_id'=>0,
         'background_style'=>'atmosphere', 'home_page_id'=>0, 'shop_page_id'=>0, 'commerce_shell'=>true, 'footer_text'=>'Ein Wohnzimmer. Musik. Und du mittendrin.', 'font'=>'serif', 'image_fit'=>'cover', 'hero_ratio'=>'4/5', 'photo_tilt'=>2, 'color_scheme'=>'dark', 'font_size'=>16, 'width'=>1240, 'radius'=>5, 'spacing'=>72,
         'colors'=>['bg'=>'#151918','surface'=>'#202725','ink'=>'#f5f1e9','muted'=>'#bfc7c1','accent'=>'#f5ac7b','button_text'=>'#1d201d','line'=>'#414a45'],
         'styles'=>[
@@ -95,6 +95,7 @@ function rl_sanitize_site($input): array {
     foreach (['logo_id','footer_logo_id','fallback_image_id'] as $key) $out[$key]=rl_image_id($input[$key] ?? 0);
     $out['logo_mode']=rl_safe_choice($input['logo_mode'] ?? 'combined',['combined','logo-only','text-only'],'combined');
     foreach (['logo_width'=>[80,480],'logo_height'=>[40,240],'logo_mobile_width'=>[80,320],'footer_logo_width'=>[80,400]] as $key=>[$min,$max]) $out[$key]=max($min,min($max,(int)($input[$key]??$d[$key])));
+    $out['header_menu_gap']=max(16,min(160,(int)($input['header_menu_gap']??$d['header_menu_gap'])));
     $out['commerce_shell']=!empty($input['commerce_shell']);
     $out['home_page_id']=is_scalar($input['home_page_id'] ?? null) ? absint($input['home_page_id']) : 0;
     $out['shop_page_id']=is_scalar($input['shop_page_id'] ?? null) ? absint($input['shop_page_id']) : 0;
