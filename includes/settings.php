@@ -93,7 +93,11 @@ function rl_settings_page(): void {
     rl_control('rl_site[logo_id]','Logo im Kopfbereich',$site['logo_id'],'image');
     rl_control('rl_site[footer_logo_id]','Logo im Fußbereich (optional; sonst Kopfbereich-Logo)',$site['footer_logo_id'],'image');
     rl_control('rl_site[logo_mode]','Logo-Darstellung',$site['logo_mode'],'select',['combined'=>'Bildzeichen mit zusätzlichem Website-Namen','logo-only'=>'Nur Logo (Schriftzug ist im Bild enthalten)','text-only'=>'Nur Website-Name und Untertitel']);
-    foreach (['logo_width'=>'Maximale Logo-Breite im Kopfbereich (80–480 px)','logo_height'=>'Maximale Logo-Höhe (40–240 px)','logo_mobile_width'=>'Maximale Logo-Breite auf Smartphones (80–320 px)','footer_logo_width'=>'Maximale Logo-Breite im Fußbereich (80–400 px)'] as $key=>$label) rl_control('rl_site['.$key.']',$label,$site[$key],'number');
+    foreach (['logo_width'=>'Logo-Breite im Kopfbereich (80–640 px)','logo_mobile_width'=>'Logo-Breite auf Smartphones (80–320 px)','footer_logo_width'=>'Logo-Breite im Fußbereich (80–400 px)'] as $key=>$label) rl_control('rl_site['.$key.']',$label,$site[$key],'number');
+    echo '<details><summary>Optionale Höhenbegrenzung</summary><p>Normalerweise bestimmt die Breite die Größe; die Höhe wird proportional berechnet. Eine aktivierte Höhenbegrenzung kann die sichtbare Breite verkleinern.</p>';
+    rl_control('rl_site[logo_limit_height]','Logo-Höhe zusätzlich begrenzen',$site['logo_limit_height'],'checkbox');
+    rl_control('rl_site[logo_height]','Höhenbegrenzung (nur bei aktivierter Option, 40–240 px)',$site['logo_height'],'number');
+    echo '</details>';
     rl_control('rl_site[header_menu_gap]','Abstand zwischen Logo und Menü (Desktop)',$site['header_menu_gap'],'range',['min'=>16,'max'=>160,'step'=>4]);
     echo '<p class="description">Das Menü steht neben dem Logo; bei wenig Platz rückt es darunter. Der Regler steuert den horizontalen Abstand (Standard: 56 px). Auf Smartphones bleibt der vertikale Abstand kompakt.</p>';
     echo '<p class="description">Transparente PNG-Dateien verwenden. Für Logos mit integriertem Schriftzug „Nur Logo“ wählen. Für den Kopfbereich empfiehlt sich die horizontale Variante, für den Fußbereich auch das Hauptlogo. Ohne gültiges Bild wird immer der Website-Name angezeigt.</p>';

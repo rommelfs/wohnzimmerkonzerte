@@ -36,7 +36,7 @@ function rl_brand(bool $footer=false): void {
     $show_image=$site['logo_mode']!=='text-only' && $id && wp_attachment_is_image($id);
     $show_text=!$show_image || $site['logo_mode']!=='logo-only';
     $label=implode(' · ',array_filter([$site['brand'],$site['subtitle']],static fn($value)=>$value!==''));
-    echo '<a class="brand'.($show_image?' rl-brand-has-logo':'').(!$show_text?' rl-brand-logo-only':'').'" href="'.esc_url(rl_concert_home_url()).'" aria-label="'.esc_attr($label).'">';
+    echo '<a class="brand'.($show_image?' rl-brand-has-logo':'').(!empty($site['logo_limit_height'])?' rl-brand-height-limited':'').(!$show_text?' rl-brand-logo-only':'').'" href="'.esc_url(rl_concert_home_url()).'" aria-label="'.esc_attr($label).'">';
     if ($show_image) echo wp_get_attachment_image($id,'large',false,['class'=>'brand-logo','alt'=>'','loading'=>$footer?'lazy':'eager']);
     if ($show_text) echo '<span class="brand-copy"><span class="brand-name">'.esc_html($site['brand']).'</span><span class="brand-subtitle">'.esc_html($site['subtitle']).'</span></span>';
     echo '</a>';
@@ -81,6 +81,7 @@ function rl_design_css(): string {
     $fonts=['serif'=>'Georgia,"Times New Roman",serif','sans'=>'system-ui,sans-serif','mono'=>'ui-monospace,monospace'];
     $css[]='--heading-font:'.($fonts[$s['font']] ?? $fonts['serif']);
     foreach (['logo_width'=>'logo-width','logo_height'=>'logo-height','logo_mobile_width'=>'logo-mobile-width','footer_logo_width'=>'footer-logo-width'] as $key=>$variable) $css[]='--'.$variable.':'.(int)$s[$key].'px';
+    $css[]='--logo-max-height:'.(!empty($s['logo_limit_height'])?max(40,min(240,(int)$s['logo_height'])).'px':'none');
     $css[]='--header-menu-gap:'.max(16,min(160,(int)$s['header_menu_gap'])).'px';
     $css[]='--page-width:'.max(960,min(1600,(int)$s['width'])).'px';
     $css[]='--radius:'.max(0,min(40,(int)$s['radius'])).'px';

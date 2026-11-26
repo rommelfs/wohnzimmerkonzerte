@@ -101,3 +101,11 @@ Abnahme: vollständiger Multisite-Verbundtest und zusätzliche Branding-Prüfung
 ## Kompakter Kopfbereich (Version 1.9.1)
 
 Das Menü steht mit einstellbarem Abstand direkt neben dem Logo. Der neue Schieberegler reicht von 16 bis 160 px, mit 56 px Standard. Auf schmalen Ansichten rückt die Navigation unter das Logo, ohne dessen gewählte Größe zu verkleinern. Mobile vertikale Abstände und die getrennten Kopf-/Fußlogos bleiben erhalten. Integrationstests prüfen Grenzen, ausgegebene CSS-Werte und erhaltene Alt-Einstellungen. Im Browser wurden Tastaturbedienung und Speichern des Reglers, tatsächlicher Pixelabstand, 1024/768/390/320 px Breite und eine umfangreiche Navigation geprüft.
+
+## Wirksame Logo-Größen (Version 1.9.2)
+
+Reproduziert: 480 px gewünschte Breite ergaben durch eine gleichzeitig gespeicherte 110-px-Höhenbegrenzung nur rund 330 px sichtbare Breite. Die Breite ist nun die maßgebliche Größe; die Höhe folgt proportional. Eine zusätzliche Höhenbegrenzung ist ausdrücklich optional und zunächst ausgeschaltet. Desktop, Smartphone und Footer bleiben unabhängig einstellbar; der Desktopbereich reicht bis 640 px. Die gespeicherten alten Höhenwerte bleiben erhalten, begrenzen aber ohne Aktivierung nicht mehr unbemerkt die Darstellung.
+
+Die Browserprüfung misst tatsächliche Bildbreiten nach Änderungen und nach Speichern über die WordPress-Oberfläche sowie die unabhängig wachsende Footer-Breite. Responsive Ansichten und die ausdrücklich aktivierte Höhenbegrenzung werden separat geprüft. Bilddateien und Menüabstand bleiben erhalten.
+
+Abnahme: vollständiger Multisite-Verbundtest, PHP-Syntax und Größenprüfungen im echten Browser bestanden. Gemessen wurden unter anderem 480 px tatsächliche Breite bei einem alten gespeicherten 110-px-Höhenwert, geänderte Breiten über das WordPress-Formular, unabhängige Footer-Größe, mobile Ansichten bis 320 px und die bewusst aktivierte Höhenbegrenzung. Testbilder und temporäre Website-Einstellungen wurden anschließend entfernt bzw. wiederhergestellt.
