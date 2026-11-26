@@ -6,6 +6,7 @@ function rl_consent_expect($ok,string $m): void {if(!$ok)throw new RuntimeExcept
 $messages=[];$capture=static function($pre,$mail)use(&$messages){$messages[]=$mail;return true;};add_filter('pre_wp_mail',$capture,PHP_INT_MAX,2);
 $event=wp_insert_post(['post_type'=>'rl_concert','post_status'=>'publish','post_title'=>'Consent fixture']);update_post_meta($event,'rl_start',wp_date('Y-m-d\TH:i',time()-DAY_IN_SECONDS));
 $old='Ich möchte per E-Mail über neue Wohnzimmerkonzerte informiert werden. Ich kann mich jederzeit abmelden.';
+$mute_admin_signup=static fn()=>false;add_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
 try {
  $wpdb->insert($s,['email'=>'old-consent@example.test','status'=>'confirmed','generation'=>7,'first_name'=>'Anna','consent'=>$old]);$id=(int)$wpdb->insert_id;
  $wpdb->insert($s,['email'=>'new-consent@example.test','status'=>'confirmed','consent'=>rl_mail_consent()]);
@@ -23,4 +24,5 @@ try {
  $legacy_token=bin2hex(random_bytes(32));$wpdb->insert($s,['email'=>'pending-legacy@example.test','status'=>'pending','consent'=>$old,'token_hash'=>hash('sha256',$legacy_token),'requested_at'=>time()]);$legacy_id=(int)$wpdb->insert_id;
  rl_consent_expect(rl_mail_confirm($legacy_id,$legacy_token) && rl_mail_subscriber('pending-legacy@example.test')->consent===$old,'A pre-update confirmation link preserves its original narrower consent text');
  echo "Consent-scope integration checks passed.\n";
-} finally {remove_filter('pre_wp_mail',$capture,PHP_INT_MAX);$wpdb->query("DELETE FROM $d");$wpdb->query("DELETE FROM $c");$wpdb->query("DELETE FROM $s");wp_delete_post($event,true);wp_clear_scheduled_hook('rl_mail_batch');}
+} finally {
+    remove_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);remove_filter('pre_wp_mail',$capture,PHP_INT_MAX);$wpdb->query("DELETE FROM $d");$wpdb->query("DELETE FROM $c");$wpdb->query("DELETE FROM $s");wp_delete_post($event,true);wp_clear_scheduled_hook('rl_mail_batch');}

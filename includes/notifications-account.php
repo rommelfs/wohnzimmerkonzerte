@@ -30,7 +30,7 @@ add_action('woocommerce_account_dashboard', function () {
     $row = rl_mail_subscriber(wp_get_current_user()->user_email);
     echo '<section class="rl-mail-account"><h2>Konzertbenachrichtigungen</h2><p>Für deine Konto-Adresse: ' . esc_html(wp_get_current_user()->user_email) . '</p>';
     if ($row && $row->status === 'confirmed') echo '<p>Du bist angemeldet.</p>';
-    elseif ($row && $row->status === 'pending') echo '<p>Bitte bestätige deine Anmeldung über den Link in deiner E-Mail.</p>';
+    elseif ($row && $row->status === 'pending') echo '<p>Deine Anmeldung ist noch nicht abgeschlossen. Öffne unsere E-Mail und klicke auf „Ja, Anmeldung bestätigen“. Dieser eine Klick genügt. Prüfe auch den Spamordner.</p>';
     else echo '<p>Du bist nicht angemeldet.</p>';
     echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_account">';
     wp_nonce_field('rl_mail_account');
@@ -57,7 +57,7 @@ function rl_mail_privacy_export(string $email, int $page = 1): array {
     $items = [];
     if ($page === 1 && $row) {
         $data = [];
-        foreach (['email' => 'E-Mail', 'first_name'=>'Vorname', 'last_name'=>'Nachname', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'pending_consent'=>'Noch nicht bestätigte Erweiterung', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
+        foreach (['email' => 'E-Mail', 'first_name'=>'Vorname', 'last_name'=>'Nachname', 'status' => 'Status', 'source' => 'Anmeldequelle', 'consent' => 'Einwilligungstext', 'pending_consent'=>'Noch nicht bestätigte Erweiterung', 'token_created_at'=>'Aktueller Link angefordert (UTC)', 'reminded_at'=>'Erinnerung angefordert (UTC)', 'confirmation_status'=>'Übergabe der Bestätigungsmail', 'admin_notice_status'=>'Übergabe der Admin-Benachrichtigung', 'requested_at' => 'Angefordert (UTC)', 'confirmed_at' => 'Bestätigt (UTC)', 'unsubscribed_at' => 'Abgemeldet (UTC)'] as $key => $label) {
             $value = str_ends_with($key, '_at') ? ((int)$row->$key ? gmdate('c', (int)$row->$key) : '') : (string)($row->$key ?? '');
             $data[] = ['name' => $label, 'value' => $value];
         }

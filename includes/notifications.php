@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-const RL_MAIL_SCHEMA = '5';
+const RL_MAIL_SCHEMA = '6';
 function rl_mail_table(string $name): string { global $wpdb; return $wpdb->prefix . 'rl_mail_' . $name; }
 function rl_mail_input(array $input, string $key): string { return isset($input[$key]) && is_string($input[$key]) ? wp_unslash($input[$key]) : ''; }
 function rl_mail_consent(): string { return 'Ich möchte per E-Mail über Wohnzimmerkonzerte und Neuigkeiten zu diesen Abenden informiert werden. Ich kann mich jederzeit abmelden.'; }
@@ -22,6 +22,10 @@ function rl_mail_install(): void {
         generation bigint(20) unsigned NOT NULL DEFAULT 1,
         token_hash varchar(64) NOT NULL DEFAULT '',
         requested_at bigint(20) unsigned NOT NULL DEFAULT 0,
+        token_created_at bigint(20) unsigned NOT NULL DEFAULT 0,
+        reminded_at bigint(20) unsigned NOT NULL DEFAULT 0,
+        confirmation_status varchar(20) NOT NULL DEFAULT '',
+        admin_notice_status varchar(20) NOT NULL DEFAULT '',
         confirmed_at bigint(20) unsigned NOT NULL DEFAULT 0,
         unsubscribed_at bigint(20) unsigned NOT NULL DEFAULT 0,
         source varchar(40) NOT NULL DEFAULT '',
@@ -67,7 +71,7 @@ function rl_mail_install(): void {
     foreach ([$subscribers, $campaigns, $deliveries] as $table) {
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table))) !== $table) return;
     }
-    foreach ([$subscribers=>['first_name','last_name','pending_consent'], $campaigns=>['body_format','text_body']] as $table=>$columns) {
+    foreach ([$subscribers=>['first_name','last_name','pending_consent','token_created_at','reminded_at','confirmation_status','admin_notice_status'], $campaigns=>['body_format','text_body']] as $table=>$columns) {
         foreach ($columns as $column) if (!$wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s", $column))) return;
     }
     // dbDelta adds columns/indexes but does not remove the old one-campaign-per-concert index.
@@ -100,12 +104,12 @@ function rl_mail_subscribe(string $email, string $source, array $profile = []): 
     $row = rl_mail_subscriber($email);
     if ($row && (($row->status === 'confirmed' && $row->consent === rl_mail_consent()) || (int)$row->requested_at > time() - HOUR_IN_SECONDS)) return;
     $token = bin2hex(random_bytes(32));
-    $data = ['status' => 'pending', 'token_hash' => hash('sha256', $token), 'requested_at' => time(), 'confirmed_at' => 0,
+    $data = ['status' => 'pending', 'token_hash' => hash('sha256', $token), 'requested_at' => time(), 'token_created_at'=>time(), 'reminded_at'=>0, 'confirmation_status'=>'sending', 'admin_notice_status'=>'', 'confirmed_at' => 0,
         'source' => sanitize_key($source), 'consent' => rl_mail_consent(), 'pending_consent'=>rl_mail_consent()] + rl_mail_profile($email, $profile);
     if ($row) {
         if ($row->status === 'confirmed') {
             // An upgrade request cannot suspend an existing subscription or overwrite its profile.
-            $data=['status'=>'confirmed','token_hash'=>hash('sha256',$token),'requested_at'=>time(),'pending_consent'=>rl_mail_consent()];
+            $data=['status'=>'confirmed','token_hash'=>hash('sha256',$token),'requested_at'=>time(),'token_created_at'=>time(),'reminded_at'=>0,'confirmation_status'=>'sending','pending_consent'=>rl_mail_consent()];
         } else $data['generation'] = (int)$row->generation + 1;
         // Compare-and-swap protects a concurrent confirmation or duplicate signup.
         $ok = $wpdb->update($table, $data, ['id' => $row->id, 'generation' => $row->generation, 'status' => $row->status, 'token_hash'=>$row->token_hash, 'requested_at'=>$row->requested_at]);
@@ -115,17 +119,18 @@ function rl_mail_subscribe(string $email, string $source, array $profile = []): 
         $id = (int)$wpdb->insert_id;
     }
     if (!$ok) return;
-    $site = wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES);
-    $explanation=$row && $row->status==='confirmed' ? 'Ohne erneute Bestätigung bleibt deine bisherige Anmeldung für Konzertankündigungen unverändert.' : 'Ohne Bestätigung erhältst du keine Konzertmails.';
-    $body = "Bitte bestätige deine Anmeldung für Konzertbenachrichtigungen von $site:\n\n" . rl_mail_url('confirm', $id, $token)
-        . "\n\n" . rl_mail_consent() . "\n\nDer Link gilt 48 Stunden. ".$explanation." Falls du die Anmeldung nicht angefordert hast, ignoriere diese Nachricht.";
-    $html = '<p>Bitte bestätige deine Anmeldung für Konzertbenachrichtigungen von ' . esc_html($site) . '.</p><p><a href="' . esc_url(rl_mail_url('confirm', $id, $token)) . '">Anmeldung bestätigen</a></p><p>' . esc_html(rl_mail_consent()) . '</p><p>Der Link gilt 48 Stunden. '.esc_html($explanation).' Falls du die Anmeldung nicht angefordert hast, ignoriere diese Nachricht.</p>';
-    rl_mail_send($email, 'Konzertbenachrichtigungen: Anmeldung bestätigen', $html, $body);
+    $saved=rl_mail_subscriber($email);
+    if (!$saved || !hash_equals(hash('sha256',$token),(string)$saved->token_hash)) return;
+    $ok=rl_mail_send_confirmation($saved,$token);
+    $wpdb->update($table,['confirmation_status'=>$ok?'sent':'failed'],['id'=>$id,'token_hash'=>hash('sha256',$token)]);
 }
 function rl_mail_confirm(int $id, string $token): bool {
     global $wpdb;
     if (!preg_match('/^[a-f0-9]{64}$/D', $token)) return false;
-    return (bool)$wpdb->query($wpdb->prepare('UPDATE ' . rl_mail_table('subscribers') . " SET generation=generation+IF(status='pending',1,0), status='confirmed', confirmed_at=%d, token_hash='', consent=COALESCE(NULLIF(pending_consent,''),consent), pending_consent='' WHERE id=%d AND status IN ('pending','confirmed') AND requested_at>=%d AND token_hash=%s", time(), $id, time() - 2 * DAY_IN_SECONDS, hash('sha256', $token)));
+    $row=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.rl_mail_table('subscribers').' WHERE id=%d',$id));
+    $ok=(bool)$wpdb->query($wpdb->prepare('UPDATE ' . rl_mail_table('subscribers') . " SET generation=generation+IF(status='pending',1,0), status='confirmed', confirmation_status='sent', confirmed_at=%d, token_hash='', consent=COALESCE(NULLIF(pending_consent,''),consent), pending_consent='' WHERE id=%d AND status IN ('pending','confirmed') AND COALESCE(NULLIF(token_created_at,0),requested_at)>=%d AND token_hash=%s", time(), $id, time() - 2 * DAY_IN_SECONDS, hash('sha256', $token)));
+    if ($ok && $row && $row->status==='pending') rl_mail_admin_signup_notice($id);
+    return $ok;
 }
 function rl_mail_unsubscribe(int $id, string $token): bool {
     global $wpdb;
@@ -133,29 +138,38 @@ function rl_mail_unsubscribe(int $id, string $token): bool {
     $wpdb->update(rl_mail_table('subscribers'), ['status' => 'unsubscribed', 'token_hash' => '', 'pending_consent'=>'', 'unsubscribed_at' => time()], ['id' => $id]);
     return true;
 }
-function rl_mail_page(string $message, string $form = ''): void {
+function rl_mail_page(string $message, string $form = '', string $title = 'Konzertbenachrichtigungen', string $state = ''): void {
     nocache_headers();
     header('Referrer-Policy: no-referrer');
     header('X-Robots-Tag: noindex, nofollow');
+    $home=function_exists('rl_concert_home_url')?rl_concert_home_url():home_url('/');
     if (!(defined('WP_CLI') && WP_CLI)) {
         add_filter('body_class',static fn($classes)=>array_merge($classes,['rl-concert-view']));
         wp_enqueue_style('rl-concerts',plugins_url('assets/frontend.css',RL_PLUGIN_FILE),[],RL_VERSION);wp_add_inline_style('rl-concerts',rl_design_css());
-        status_header(200);rl_header();echo '<main id="main" class="wrap section prose"><h1>Konzertbenachrichtigungen</h1><p role="status">'.esc_html($message).'</p>'.$form.'<p><a class="button" href="'.esc_url(home_url('/')).'">Zur Website</a></p><p>Eine erneute Bestätigung kann nach einer Stunde über das Anmeldeformular angefordert werden.</p></main>';rl_footer();exit;
+        status_header(200);rl_header();
+        echo '<main id="main" class="wrap section prose rl-mail-feedback '.esc_attr($state).'" tabindex="-1"><h1>'.esc_html($title).'</h1><p class="rl-mail-feedback-intro" role="status">'.esc_html($message).'</p>'.$form.'<p class="rl-mail-back"><a href="'.esc_url($home).'">Zur Konzertwebsite</a></p></main>';
+        rl_footer();exit;
     }
-    wp_die('<p>' . esc_html($message) . '</p>' . $form . '<p><a href="' . esc_url(home_url('/')) . '">Zur Website</a></p>', 'Konzertbenachrichtigungen', ['response' => 200]);
+    wp_die('<h1>'.esc_html($title).'</h1><p>' . esc_html($message) . '</p>' . $form . '<p><a href="' . esc_url($home) . '">Zur Konzertwebsite</a></p>', $title, ['response' => 200]);
 }
 function rl_mail_link(): void {
     $mode = sanitize_key(rl_mail_input($_REQUEST, 'mode'));
     $id = absint(rl_mail_input($_REQUEST, 'id'));
     $token = sanitize_text_field(rl_mail_input($_REQUEST, 'token'));
-    if (!in_array($mode, ['confirm', 'unsubscribe'], true) || !$id || !preg_match('/^[a-f0-9]{64}$/D', $token)) rl_mail_page('Dieser Link ist ungültig.');
-    // Link scanners may fetch GET links. Only an explicit form submission changes consent.
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $ok = $mode === 'confirm' ? rl_mail_confirm($id, $token) : rl_mail_unsubscribe($id, $token);
-        rl_mail_page($ok ? ($mode === 'confirm' ? 'Deine Anmeldung ist bestätigt.' : 'Du erhältst keine weiteren Konzertbenachrichtigungen.') : 'Der Link ist ungültig oder bereits verwendet. Bitte melde dich bei Bedarf erneut an.');
+    if (!in_array($mode, ['confirm', 'unsubscribe'], true) || !$id || !preg_match('/^[a-f0-9]{64}$/D', $token)) rl_mail_invalid_link();
+    // One-click confirmation is intentional; automated link checks may also confirm.
+    if ($mode==='confirm') {
+        if (!in_array($_SERVER['REQUEST_METHOD'],['GET','POST'],true)) rl_mail_page('Bitte öffne den Bestätigungslink aus deiner E-Mail.');
+        if (!rl_mail_confirm($id,$token)) rl_mail_invalid_link();
+        rl_mail_page('Fertig! Deine Anmeldung ist jetzt vollständig bestätigt. Du erhältst künftig unsere Konzertbenachrichtigungen.','','Du bist angemeldet!','rl-mail-complete');
     }
-    $form = '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_link"><input type="hidden" name="mode" value="' . esc_attr($mode) . '"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="token" value="' . esc_attr($token) . '"><button type="submit">' . ($mode === 'confirm' ? 'Anmeldung bestätigen' : 'Jetzt abmelden') . '</button></form>';
-    rl_mail_page($mode === 'confirm' ? rl_mail_consent() : 'Möchtest du dich von den Konzertbenachrichtigungen abmelden?', $form);
+    // Keep unsubscribe read-only on GET to avoid unintended scanner-triggered removals.
+    if ($_SERVER['REQUEST_METHOD']==='POST') {
+        if (!rl_mail_unsubscribe($id,$token)) rl_mail_invalid_link();
+        rl_mail_page('Du erhältst keine weiteren Konzertbenachrichtigungen.','','Du bist abgemeldet.','rl-mail-complete');
+    }
+    $form='<form class="rl-mail-confirm-action" method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="rl_mail_link"><input type="hidden" name="mode" value="unsubscribe"><input type="hidden" name="id" value="'.$id.'"><input type="hidden" name="token" value="'.esc_attr($token).'"><button class="button" type="submit">Jetzt abmelden</button></form>';
+    rl_mail_page('Möchtest du dich von den Konzertbenachrichtigungen abmelden?',$form,'Konzertbenachrichtigungen abmelden');
 }
 add_action('admin_post_rl_mail_link', 'rl_mail_link');
 add_action('admin_post_nopriv_rl_mail_link', 'rl_mail_link');
@@ -172,7 +186,7 @@ function rl_mail_signup_form(): string {
         . '<p><label for="' . esc_attr($id) . '-first">Vorname (optional)</label><br><input id="' . esc_attr($id) . '-first" name="first_name" autocomplete="given-name" maxlength="100" value="' . esc_attr($user->first_name) . '"></p><p><label for="' . esc_attr($id) . '-last">Nachname (optional)</label><br><input id="' . esc_attr($id) . '-last" name="last_name" autocomplete="family-name" maxlength="100" value="' . esc_attr($user->last_name) . '"></p>'
         . '<p><label><input type="checkbox" name="consent" value="1" required> ' . esc_html(rl_mail_consent()) . '</label></p>'
         . ($privacy ? '<p><a href="' . esc_url($privacy) . '">Datenschutzhinweise</a></p>' : '')
-        . '<button class="button" type="submit">Konzertbenachrichtigungen abonnieren</button></form>';
+        . '<p class="rl-mail-steps">So geht’s: Formular absenden → E-Mail öffnen → Bestätigungslink anklicken. Ein Klick auf den Link genügt; danach bist du angemeldet.</p><button class="button" type="submit">Bestätigungs-E-Mail anfordern</button></form>';
 }
 add_shortcode('rommelfangen_notifications', 'rl_mail_signup_form');
 function rl_mail_signup(): void {
@@ -187,7 +201,7 @@ function rl_mail_signup(): void {
             rl_mail_subscribe(sanitize_email(rl_mail_input($_POST, 'email')), 'form', ['first_name'=>rl_mail_input($_POST, 'first_name'), 'last_name'=>rl_mail_input($_POST, 'last_name')]);
         } else rl_mail_page('Zu viele Anmeldungen über diesen Internetanschluss. Bitte versuche es in einer Stunde erneut.');
     }
-    rl_mail_page('Falls für diese Adresse eine Bestätigung erforderlich ist, erhältst du eine E-Mail. Bitte bestätige dort deine Anmeldung. Prüfe auch deinen Spamordner.');
+    rl_mail_page('Deine Anmeldung ist noch nicht abgeschlossen. Falls für diese Adresse eine Bestätigung erforderlich ist, erhältst du jetzt eine E-Mail.', '<ol class="rl-mail-next-steps"><li>Öffne unsere E-Mail. Prüfe auch den Spamordner.</li><li>Klicke dort auf „Ja, Anmeldung bestätigen“. Dieser eine Klick genügt.</li></ol><p>Erst wenn „Du bist angemeldet!“ erscheint, ist alles erledigt. Bereits bestätigte Anmeldungen bleiben aktiv. Falls keine E-Mail ankommt, kannst du nach einer Stunde erneut eine anfordern.</p>', 'Bitte öffne jetzt deine E-Mail', 'rl-mail-action-needed');
 }
 add_action('admin_post_rl_mail_signup', 'rl_mail_signup');
 add_action('admin_post_nopriv_rl_mail_signup', 'rl_mail_signup');

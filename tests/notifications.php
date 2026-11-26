@@ -29,6 +29,7 @@ $concert = static function () use (&$events): int {
     return $id;
 };
 ob_start();
+$mute_admin_signup=static fn()=>false;add_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
 try {
     // Exercise a real upgrade with a retained v1 campaign, then repeat it safely.
     $legacy_event=$concert();
@@ -49,18 +50,18 @@ try {
     $row = rl_mail_subscriber('notify-a@example.test');
     rl_mail_expect($row->status === 'pending' && $row->token_hash !== $token && hash_equals($row->token_hash, hash('sha256', $token)), 'Signup is pending; only confirmation-token hash is stored');
     $_REQUEST = ['mode'=>'confirm', 'id'=>(string)$a, 'token'=>$token]; $_SERVER['REQUEST_METHOD']='GET';
-    try { rl_mail_link(); } catch (RL_Mail_Test_Response $response) { rl_mail_expect(str_contains($response->getMessage(), 'method="post"'), 'Confirmation GET renders an explicit confirmation form'); }
-    rl_mail_expect(rl_mail_subscriber('notify-a@example.test')->status === 'pending', 'Email link scanners cannot confirm via GET');
+    try { rl_mail_link(); } catch (RL_Mail_Test_Response $response) { rl_mail_expect(str_contains($response->getMessage(), 'Du bist angemeldet!') && !str_contains($response->getMessage(), 'method="post"'), 'Confirmation link completes signup without a second button'); }
+    rl_mail_expect(rl_mail_subscriber('notify-a@example.test')->status === 'confirmed', 'GET link confirmation is intentional and records completed consent');
     $_REQUEST = [];
     $count = count($messages);
     rl_mail_subscribe('NOTIFY-A@example.test', 'checkout');
     rl_mail_expect(count($messages) === $count, 'Duplicate signup is normalized and throttled');
-    rl_mail_expect(!rl_mail_confirm($a, str_repeat('0', 64)) && rl_mail_confirm($a, $token) && !rl_mail_confirm($a, $token), 'Confirmation requires the correct single-use token');
+    rl_mail_expect(!rl_mail_confirm($a, str_repeat('0', 64)) && !rl_mail_confirm($a, $token), 'Confirmation requires the correct single-use token');
     rl_mail_expect(rl_mail_subscriber('notify-a@example.test')->consent === rl_mail_consent(), 'Consent text, source and confirmation timestamp are recorded');
     rl_mail_subscribe('notify-a@example.test', 'form');
     rl_mail_expect(count($messages) === $count, 'Confirmed recipients receive no repeated confirmation');
     [$b, $expired] = $subscribe('notify-b@example.test');
-    $wpdb->update($s, ['requested_at'=>time()-3*DAY_IN_SECONDS], ['id'=>$b]);
+    $wpdb->update($s, ['requested_at'=>time()-3*DAY_IN_SECONDS,'token_created_at'=>time()-3*DAY_IN_SECONDS], ['id'=>$b]);
     rl_mail_expect(!rl_mail_confirm($b, $expired), 'Expired confirmation links are rejected');
     [$b, $btoken] = $subscribe('notify-b@example.test');
     rl_mail_expect(!rl_mail_confirm($b, $expired) && rl_mail_confirm($b, $btoken), 'A fresh request invalidates the old confirmation link');
@@ -226,6 +227,7 @@ try {
     rl_mail_expect(!rl_mail_subscriber('pending@example.test'), 'Expired unconfirmed addresses are cleaned up');
     echo "Notification integration checks passed; no external mail sent.\n";
 } finally {
+    remove_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
     remove_filter('wp_die_handler', $die_handler);
     remove_filter('pre_wp_mail', $capture, PHP_INT_MAX);
     $_POST=[]; $_REQUEST=[]; $_GET=[];

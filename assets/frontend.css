@@ -778,3 +778,14 @@ html.rl-gallery-open { overflow:hidden; }
   .rl-lightbox-image { max-height:58dvh; }
 }
 @media print { .rl-lightbox { display:none !important; } }
+
+.rl-mail-feedback { max-width:900px; margin-inline:auto; }
+.rl-mail-feedback h1 { font-size:clamp(2rem,5vw,3.5rem); overflow-wrap:anywhere; }
+.rl-mail-feedback-intro { font-size:1.2rem; }
+.rl-mail-next-steps { padding-left:1.5rem; }
+.rl-mail-next-steps li { padding:.45rem 0; }
+.rl-mail-confirm-action { margin-block:1.8rem; }
+.rl-mail-confirm-action .button { font-size:1.15rem; padding:1rem 1.5rem; }
+.rl-mail-back { margin-top:2rem; }
+.rl-mail-steps { max-width:46rem; font-size:.95rem; }
+.rl-mail-complete { border-top:4px solid var(--accent); margin-top:2rem; }

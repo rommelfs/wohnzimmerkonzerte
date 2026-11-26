@@ -85,3 +85,5 @@ wp eval-file wp-content/plugins/wohnzimmerkonzerte/tests/wordpress.php --url=htt
 GitHub Actions prüft PHP-Syntax, Highlight-Auswahl und Multisite-Isolation. Die Multisite-Testanleitung steht in [tests/MULTISITE.md](tests/MULTISITE.md). Externe Zahlungen und E-Mail-Zustellung werden dabei nicht durchgeführt.
 
 Ab Version 1.7 stehen im Konzert eigene Ankündigungs-/Rückblicktexte, kurze Seitentitel mit Untertitel, eine sortierbare Fotogalerie und lokale Videos mit Vorschaubild bereit. Allgemeine Website-Texte sind auch für Redakteure unter **Konzerte → Website-Texte** zugänglich. Details und die Trennung von Titelbildern und Galerie beschreibt [WEBSITE-EDITOR.md](docs/WEBSITE-EDITOR.md).
+
+Ab Version 1.8 genügt der Bestätigungslink aus der Newsletter-Mail; der zusätzliche Klick auf der Website entfällt. Für offene Anmeldungen gibt es eine bewusste einmalige Erinnerung und für abgeschlossene Anmeldungen eine einstellbare Admin-Mail. Bestehende Einträge werden beim Update weder automatisch bestätigt noch angeschrieben. Die Abläufe und Fristen stehen in [BETRIEB.md](docs/BETRIEB.md).

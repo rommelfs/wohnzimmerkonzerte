@@ -13,10 +13,11 @@ function rl_mail_admin(): void {
     echo '<div class="wrap"><h1>Konzertbenachrichtigungen</h1><p>Newsletter gehen an bestätigte Anmeldungen; Buchungsinformationen gezielt an Besteller eines Konzerts. Der Versand nutzt den vorhandenen WordPress-Mailweg. Bestehende Kunden werden nicht automatisch angemeldet.</p>';
     if (isset($_GET['queued'])) echo '<div class="notice notice-success"><p>Der Versandauftrag wurde angelegt. Die Verarbeitung erfolgt über WordPress-Cron.</p></div>';
     if ($error = get_transient('rl_mail_admin_' . get_current_user_id())) {
-        echo '<div class="notice '.(str_starts_with($error,'Testmail an den Versandweg') ? 'notice-success' : 'notice-error').'"><p>' . esc_html($error) . '</p></div>';
+        echo '<div class="notice '.((str_starts_with($error,'Testmail an den Versandweg') || str_starts_with($error,'Erinnerung an den Mailserver')) ? 'notice-success' : 'notice-error').'"><p>' . esc_html($error) . '</p></div>';
         delete_transient('rl_mail_admin_' . get_current_user_id());
     }
     rl_mail_sender_form();
+    rl_mail_registration_form();
     if (function_exists('rl_ops_options') && rl_ops_options()['mail_paused']) echo '<div class="notice notice-warning"><p>Der Versand wartender Newsletter- und Bestelleraufträge ist pausiert. Anmeldebestätigungen und Zahlungserinnerungen bleiben aktiv. Fortsetzen unter Konzertbetrieb.</p></div>';
     $confirmed = (int)$wpdb->get_var('SELECT COUNT(*) FROM ' . rl_mail_table('subscribers') . " WHERE status='confirmed'");
     echo '<h2>Nachricht zu einem Konzert</h2><p>' . esc_html($confirmed) . ' Newsletter-Abonnenten. Wähle einen kommenden oder vergangenen Abend und passe Betreff und Nachricht an, z. B. für eine Ankündigung, Fundsachen oder Fotolinks. Jede neue Freigabe erzeugt einen eigenen Auftrag.</p><form method="get"><input type="hidden" name="post_type" value="rl_concert"><input type="hidden" name="page" value="rl-notifications"><label for="rl-mail-concert">Konzert</label> <select name="concert" id="rl-mail-concert">';
@@ -42,16 +43,22 @@ function rl_mail_admin(): void {
         echo '<tr><td>' . esc_html($campaign->subject) . '<br>Konzert: ' . esc_html(get_the_title((int)$campaign->concert_id)) . '<br>' . esc_html(wp_date('d.m.Y H:i', (int)$campaign->created_at)) . '</td><td>' . esc_html(implode(' · ', $labels)) . '</td></tr>';
     }
     if (!$campaigns) echo '<tr><td colspan="2">Noch keine Versandaufträge.</td></tr>';
-    echo '</tbody></table><h2>Empfänger</h2><p>Einwilligung und Versanddaten lassen sich auch über die WordPress-Werkzeuge für personenbezogene Daten exportieren und löschen.</p><table class="widefat striped"><thead><tr><th>E-Mail</th><th>Status</th><th>Einwilligung</th><th>Aktion</th></tr></thead><tbody>';
+    $pending=(int)$wpdb->get_var('SELECT COUNT(*) FROM '.rl_mail_table('subscribers')." WHERE status='pending'");
+    echo '</tbody></table><h2>Empfänger</h2><p><strong>'.esc_html($pending).' Bestätigungen offen.</strong> Diese Adressen erhalten noch keine Newsletter. Nach 24 Stunden kann pro Anmeldung einmal eine neue Bestätigungs-E-Mail angefordert werden, bis spätestens fünf Tage nach der Anmeldung. Kein automatischer Erinnerungsversand.</p><p>Einwilligung und Versanddaten lassen sich auch über die WordPress-Werkzeuge für personenbezogene Daten exportieren und löschen.</p><table class="widefat striped"><thead><tr><th>E-Mail</th><th>Status</th><th>Einwilligung</th><th>Aktion</th></tr></thead><tbody>';
     $page = max(1, absint(rl_mail_input($_GET, 'paged')));
     $rows = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . rl_mail_table('subscribers') . ' ORDER BY id DESC LIMIT 50 OFFSET %d', ($page - 1) * 50));
     foreach ($rows as $row) {
         echo '<tr><td>' . esc_html($row->email) . '<br>' . esc_html(trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''))) . '</td><td>' . esc_html(rl_mail_status_label($row->status)) . '</td><td>' . esc_html($row->source) . '<br>Angefordert: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->requested_at));
         if ($row->confirmed_at) echo '<br>Bestätigt: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->confirmed_at));
         if ($row->unsubscribed_at) echo '<br>Abgemeldet: ' . esc_html(wp_date('d.m.Y H:i', (int)$row->unsubscribed_at));
+        if ($row->status==='pending') { $expires=(int)($row->token_created_at?:$row->requested_at)+2*DAY_IN_SECONDS;echo '<br>'.esc_html($expires>time()?'Link gültig bis: '.wp_date('d.m.Y H:i',$expires):'Bestätigungslink abgelaufen'); }
+        if (!empty($row->reminded_at)) echo '<br>Erneuter Versand angefordert: '.esc_html(wp_date('d.m.Y H:i',(int)$row->reminded_at));
+        if (!empty($row->confirmation_status)) echo '<br>Bestätigungsmail: '.esc_html(rl_mail_status_label($row->confirmation_status));
+        if (!empty($row->admin_notice_status)) echo '<br>Admin-Benachrichtigung: '.esc_html(rl_mail_status_label($row->admin_notice_status));
         echo '<details><summary>Einwilligungstext</summary>' . esc_html($row->consent) . '</details></td><td><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="rl_mail_delete"><input type="hidden" name="subscriber" value="' . (int)$row->id . '">';
         wp_nonce_field('rl_mail_delete_' . $row->id);
-        echo '<button class="button" type="submit">Anmeldung und Versanddaten löschen</button></form></td></tr>';
+        echo '<button class="button" type="submit">Anmeldung und Versanddaten löschen</button></form>';
+        rl_mail_reminder_action($row);echo '</td></tr>';
     }
     if (!$rows) echo '<tr><td colspan="4">Keine Anmeldungen vorhanden.</td></tr>';
     echo '</tbody></table>';

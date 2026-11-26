@@ -28,6 +28,7 @@ $profile_order=null;
 $event=wp_insert_post(['post_type'=>'rl_concert','post_status'=>'publish','post_title'=>'Musik & Freunde']);
 update_post_meta($event,'rl_start',wp_date('Y-m-d\TH:i',time()-DAY_IN_SECONDS));
 ob_start();
+$mute_admin_signup=static fn()=>false;add_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
 try {
     // Upgrade the exact previous schema with real retained data.
     $wpdb->query("ALTER TABLE $s DROP COLUMN first_name, DROP COLUMN last_name");
@@ -93,6 +94,7 @@ try {
     rl_format_expect(rl_mail_subscriber('anna@example.test')->first_name === 'Anna', 'Anonymous repeat signup cannot overwrite a confirmed recipient profile');
     echo "HTML, text alternative, personalization and sender checks passed; no external mail sent.\n";
 } finally {
+    remove_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
     remove_filter('pre_wp_mail',$force_transport,PHP_INT_MAX);
     remove_filter('wp_mail_from',$baseline_from,5);
     $phpmailer=$original_mailer;

@@ -75,3 +75,11 @@ Abnahme dieser Runde: Der vollständige Multisite-Verbundtest bestand erneut ein
 ## Galerie-Navigation (Version 1.7.2)
 
 E2 ist um eine zusammenhängende Bildansicht ergänzt: Vor-/Zurück-Buttons, Pfeiltasten, Touch-Wischen, Bildzähler, Bildunterschriften und Schließen mit Rückgabe des Fokus. Einzelbild-Galerien, mehrere getrennte Galerien, Ladefehler und direkte Bildlinks ohne JavaScript bleiben unterstützt. Die Browserprüfung auf Desktop und Mobil einschließlich echter Touch-Ereignisse bestand; `tests/editorial.php` prüft zusätzlich die ausgelieferten Galerie-Daten und das lokale Script. Keine externen Dienste.
+
+## Einfachere Newsletter-Anmeldung (Version 1.8)
+
+Der Bestätigungslink schließt die Anmeldung nun unmittelbar ab. Der zweite Klick auf der Website entfällt ausdrücklich; das Risiko automatischer Linkprüfungen ist eine bewusste Produktentscheidung. Texte auf Formular, Rückmeldeseite, HTML-Mail und Textalternative beschreiben denselben Ablauf. Alte noch gültige Links funktionieren weiter. Offene Einträge werden nicht pauschal bestätigt.
+
+Ergänzt sind eine bewusste einmalige Bestätigungserinnerung nach 24 Stunden (bis Tag fünf), sichtbare Übergabestatus und eine einstellbare Admin-Benachrichtigung nach erfolgreichem Abschluss. Die bestehende Einwilligung wird beim Erinnern nicht erweitert. Es gibt weder automatische Nachfassmails noch rückwirkenden Admin-Versand. `tests/registration.php` prüft Schema-Upgrade, Altlinks, Ein-Klick-Abschluss, Ablauf und Konkurrenzschutz der Erinnerung sowie Admin-Mails und deren Fehlerfälle.
+
+Abnahme: vollständiger WordPress-/WooCommerce-Multisite-Verbundtest bestanden, einschließlich der 18 neuen Integrationsprüfungen für Anmeldung, Erinnerung und Admin-Mails. Zusätzlich wurde der echte öffentliche Formular-/Mail-Link-Ablauf auf Desktop und Mobil im Browser geprüft, ebenso die Erinnerung über die Adminoberfläche, ein ungültiger Nonce und das Speichern einer geänderten Admin-Zieladresse. Alle Mails und Zahlungen blieben lokal abgefangen. Die Testwebsite und das dafür angelegte Admin-Konto wurden anschließend entfernt. Reale offene Anmeldungen wurden weder aktiviert noch angeschrieben.
