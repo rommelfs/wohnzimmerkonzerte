@@ -89,6 +89,21 @@ function rl_mail_render(object $campaign, array $values): array {
     if ($html_mode) $html = '<!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font-family:Arial,sans-serif;line-height:1.6;color:#202725;background:#ffffff"><div style="max-width:680px;margin:0 auto;padding:24px">' . $html . '</div></body></html>';
     return ['subject'=>$subject,'html'=>$html,'text'=>$text];
 }
+function rl_mail_sender(): array {
+    $saved=get_option('rl_mail_sender',[]);$saved=is_array($saved)?$saved:[];
+    return ['name'=>!empty($saved['name']) && is_string($saved['name'])?sanitize_text_field($saved['name']):'Rommelfangen Konzerte',
+        'email'=>!empty($saved['email']) && is_email($saved['email'])?$saved['email']:'konzerte@rommelfangen.de'];
+}
+function rl_mail_sender_upgrade(): void {
+    if (get_option('rl_mail_sender_defaults_version')==='1') return;
+    $saved=get_option('rl_mail_sender',[]);$saved=is_array($saved)?$saved:[];
+    // Replace only the reported legacy sender once; keep deliberately configured custom senders.
+    if (strtolower(trim((string)($saved['email']??'')))==='wordpress@kan.so') {
+        $saved['email']='konzerte@rommelfangen.de';update_option('rl_mail_sender',$saved);
+    }
+    update_option('rl_mail_sender_defaults_version','1',false);
+}
+add_action('init','rl_mail_sender_upgrade',22);
 function rl_mail_sender_settings($input): array {
     $input = is_array($input) ? $input : [];
     $name = sanitize_text_field(is_string($input['name'] ?? null) ? $input['name'] : '');
@@ -102,13 +117,14 @@ function rl_mail_sender_settings($input): array {
 }
 /** PHPMailer builds multipart/alternative from HTML Body and AltBody, over the existing transport. */
 function rl_mail_send(string $email, string $subject, string $html, string $text): bool {
-    $sender = get_option('rl_mail_sender', []);
-    $sender = is_array($sender) ? $sender : [];
+    $sender = rl_mail_sender();
     $from = static fn($existing) => !empty($sender['email']) && is_email($sender['email']) ? $sender['email'] : $existing;
     $from_name = static fn($existing) => !empty($sender['name']) && is_string($sender['name']) ? sanitize_text_field($sender['name']) : $existing;
     $mailer = null; $previous = '';
-    $alternative = static function ($phpmailer) use ($html, $text, $subject, &$mailer, &$previous) {
-        if ($html === '' || $phpmailer->Body !== $html || $phpmailer->Subject !== $subject) return;
+    $alternative = static function ($phpmailer) use ($html, $text, $subject, $sender, &$mailer, &$previous) {
+        if ($phpmailer->Body !== ($html!==''?$html:$text) || $phpmailer->Subject !== $subject) return;
+        $phpmailer->setFrom($sender['email'],$sender['name'],false);
+        if ($html==='') return;
         $mailer = $phpmailer; $previous = $phpmailer->AltBody;
         $phpmailer->isHTML(true);
         $phpmailer->AltBody = $text;

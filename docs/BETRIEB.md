@@ -68,7 +68,7 @@ Vor dem Livegang bleiben visuelle Prüfung mit eurem aktiven Theme, externe PayP
 Die Gestaltung, sortierbaren Bereiche und die neue Über-uns-Abteilung werden unter **Einstellungen → Rommelfangen Concerts** gepflegt. Jedes Konzert kann getrennte Bilder und Farben für Ankündigung und Rückblick erhalten. Der Ticketshop übernimmt den ausgewählten Abend und erlaubt Tickets mehrerer Konzerte in einem WooCommerce-Warenkorb. [Vollständige Bedienungsanleitung](WEBSITE-EDITOR.md).
 ## Konzertbenachrichtigungen
 
-Die Funktion gehört zum Konzert-Plugin und verschickt über `wp_mail()` auf eurem vorhandenen Server. Ein externer Newsletter-Anbieter, Trackingpixel oder ein kostenpflichtiger Dienst werden nicht eingebunden. Absender, Postfix, SPF/DKIM/DMARC und Rückläuferpostfach bleiben serverseitig eingerichtet.
+Die Funktion gehört zum Konzert-Plugin und verschickt über `wp_mail()` auf eurem vorhandenen Server. Ein externer Newsletter-Anbieter, Trackingpixel oder ein kostenpflichtiger Dienst werden nicht eingebunden. Der Absender der Konzertmails ist im Modul konfigurierbar. Postfix, SPF/DKIM/DMARC und Rückläuferpostfach bleiben serverseitig eingerichtet.
 
 ### Anmeldung und Kundenkonto
 
@@ -95,7 +95,7 @@ Der Versand erfolgt über WordPress-Cron in Portionen von höchstens 20 Empfäng
 
 ### Absender einstellen
 
-Unter **Konzerte → Benachrichtigungen → Absender der Konzertmails** den **Absendernamen** und die **Absenderadresse** speichern. Damit lässt sich die WordPress-Vorgabe wie `wordpress@kan.so` für dieses Modul ersetzen. Beispielsweise könnt ihr „Rommelfangen Konzerte“ und eure tatsächlich verwendete Konzert-Mailadresse eintragen. Leere Felder übernehmen die WordPress-Vorgabe. Eine ungültige Adresse überschreibt keine bisher gültige Einstellung.
+Unter **Konzerte → Benachrichtigungen → Absender der Konzertmails** den **Absendernamen** und die **Absenderadresse** speichern. Ab Version 1.8.2 sind `konzerte@rommelfangen.de` und „Rommelfangen Konzerte“ die Vorgaben; leere Felder verwenden diese Werte. Die bisherige Adresse `wordpress@kan.so` wird einmalig ersetzt. Andere bereits konfigurierte Adressen und Namen bleiben erhalten. Anschließend können Adresse und Name jederzeit geändert werden. Eine ungültige Adresse überschreibt keine bisher gültige Einstellung.
 
 Die Einstellung gilt pro Website für Anmeldebestätigungen und Konzertnachrichten. Andere WordPress- und WooCommerce-Mails behalten ihre vorhandenen Einstellungen. Der Versandweg bleibt `wp_mail()` mit eurem serverseitig eingerichteten Mailserver. Die verwendete Absenderadresse muss dort zugelassen sein.
 

@@ -70,9 +70,9 @@ add_action('admin_init', function () {
     register_setting('rl_mail_sender', 'rl_mail_sender', ['type'=>'array', 'sanitize_callback'=>'rl_mail_sender_settings', 'default'=>[]]);
 });
 function rl_mail_sender_form(): void {
-    $sender = get_option('rl_mail_sender', []); $sender = is_array($sender) ? $sender : [];
+    $sender = rl_mail_sender();
     settings_errors('rl_mail_sender');
-    echo '<details><summary><strong>Absender der Konzertmails</strong></summary><p>Gilt für Anmeldebestätigungen und Konzertnachrichten dieser Website. Leere Felder übernehmen die WordPress-Vorgabe.</p><form method="post" action="options.php">';
+    echo '<details><summary><strong>Absender der Konzertmails</strong></summary><p>Gilt für Anmeldebestätigungen und Konzertnachrichten dieser Website. Absenderadresse und Name sind frei konfigurierbar. Leere Felder verwenden „konzerte@rommelfangen.de“ und „Rommelfangen Konzerte“.</p><form method="post" action="options.php">';
     settings_fields('rl_mail_sender');
     echo '<p><label for="rl-mail-from-name">Absendername</label><br><input class="regular-text" id="rl-mail-from-name" name="rl_mail_sender[name]" value="' . esc_attr($sender['name'] ?? '') . '" placeholder="Rommelfangen Konzerte"></p><p><label for="rl-mail-from-email">Absenderadresse</label><br><input class="regular-text" type="email" id="rl-mail-from-email" name="rl_mail_sender[email]" value="' . esc_attr($sender['email'] ?? '') . '" placeholder="konzerte@rommelfangen.de"></p>';
     submit_button('Absender speichern', 'secondary', 'submit', false);

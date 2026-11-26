@@ -20,6 +20,7 @@ class RL_Test_Mime_Mailer extends WP_PHPMailer {
 }
 $original_mailer=$phpmailer ?? null; $phpmailer=new RL_Test_Mime_Mailer(true); $fake=$phpmailer;
 $sender_before=get_option('rl_mail_sender', null);
+$sender_version_before=get_option('rl_mail_sender_defaults_version',null);
 $force_transport=static fn($pre)=>null;
 add_filter('pre_wp_mail',$force_transport,PHP_INT_MAX);
 $baseline_from=static fn($from)=>'wordpress@network.example.test';
@@ -30,6 +31,16 @@ update_post_meta($event,'rl_start',wp_date('Y-m-d\TH:i',time()-DAY_IN_SECONDS));
 ob_start();
 $mute_admin_signup=static fn()=>false;add_filter('rl_mail_admin_signup_notice_enabled',$mute_admin_signup);
 try {
+    update_option('rl_mail_sender',['email'=>'wordpress@kan.so','name'=>'Eigener Konzertname']);delete_option('rl_mail_sender_defaults_version');rl_mail_sender_upgrade();
+    rl_format_expect(rl_mail_sender()['email']==='konzerte@rommelfangen.de' && rl_mail_sender()['name']==='Eigener Konzertname','Reported legacy address is replaced once while preserving the configured name');
+    update_option('rl_mail_sender',['email'=>'custom@example.test','name'=>'Custom']);delete_option('rl_mail_sender_defaults_version');rl_mail_sender_upgrade();
+    rl_format_expect(rl_mail_sender()['email']==='custom@example.test','Custom sender addresses remain configurable across the upgrade');
+    delete_option('rl_mail_sender');
+    rl_mail_send('sender-default@example.test','Default sender','<p>Default</p>','Default');$default=end($fake->captured);
+    rl_format_expect($default['from']==='konzerte@rommelfangen.de' && $default['name']==='Rommelfangen Konzerte','Unset sender uses the requested concert address instead of WordPress');
+    update_option('rl_mail_sender',['email'=>'','name'=>'']);
+    rl_mail_send('sender-default@example.test','Empty sender','','Plain text');$default=end($fake->captured);
+    rl_format_expect($default['from']==='konzerte@rommelfangen.de','Empty sender settings also use the concert address for text-only mail');
     // Upgrade the exact previous schema with real retained data.
     $wpdb->query("ALTER TABLE $s DROP COLUMN first_name, DROP COLUMN last_name");
     $wpdb->query("ALTER TABLE $c DROP COLUMN body_format, DROP COLUMN text_body");
@@ -82,6 +93,10 @@ try {
     rl_format_expect(str_contains(wp_json_encode($export),'Anna') && str_contains(wp_json_encode($export),'Muster'), 'Privacy export includes stored subscriber names');
     $invalid=rl_mail_sender_settings(['name'=>'New name','email'=>'not-an-address']);
     rl_format_expect($invalid['email'] === 'konzerte@example.test', 'Invalid sender address preserves the previous valid setting');
+    $forced=static function($mailer){$mailer->setFrom('wordpress@kan.so','WordPress',false);};add_action('phpmailer_init',$forced,20);
+    rl_mail_send('sender-override@example.test','Sender precedence','<p>Configured</p>','Configured');
+    rl_format_expect(end($fake->captured)['from']==='konzerte@example.test','Configured concert sender wins over an earlier mailer initialization override');
+    remove_action('phpmailer_init',$forced,20);
     $fake->fail=true; rl_format_expect(!rl_mail_send('anna@example.test','Failure','<p>HTML</p>','Alternative'),'Transport failures are reported without external delivery'); $fake->fail=false;
     rl_format_expect($fake->AltBody === '', 'Failed HTML sends also restore the shared mailer state');
     wp_mail('ordinary@example.test','After failure','Ordinary body');
@@ -98,6 +113,7 @@ try {
     remove_filter('pre_wp_mail',$force_transport,PHP_INT_MAX);
     remove_filter('wp_mail_from',$baseline_from,5);
     $phpmailer=$original_mailer;
+    if($sender_version_before===null)delete_option('rl_mail_sender_defaults_version');else update_option('rl_mail_sender_defaults_version',$sender_version_before);
     if ($sender_before === null) delete_option('rl_mail_sender'); else update_option('rl_mail_sender',$sender_before);
     $wpdb->query("DELETE FROM $d"); $wpdb->query("DELETE FROM $c"); $wpdb->query("DELETE FROM $s");
     if ($profile_order) $profile_order->delete(true);
