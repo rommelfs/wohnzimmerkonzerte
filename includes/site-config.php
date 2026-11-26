@@ -3,6 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 function rl_ui_defaults(): array {
     return [
+        'gallery_close'=>'Bildansicht schließen', 'gallery_previous'=>'Vorheriges Bild', 'gallery_next'=>'Nächstes Bild', 'gallery_count'=>'Bild {current} von {total}', 'gallery_original'=>'Original öffnen', 'gallery_error'=>'Das Bild konnte nicht geladen werden. Bitte versuche es erneut oder öffne das Original.',
         'calendar_save'=>'Im Kalender speichern', 'review_box'=>'Dieser Konzertabend', 'review_newsletter'=>'Beim nächsten Abend dabei sein', 'gallery_title'=>'Bilder vom Konzert', 'photo_open'=>'Foto in voller Größe öffnen', 'video_download'=>'Video herunterladen',
         'skip'=>'Zum Inhalt', 'nav_upcoming'=>'Konzerte', 'nav_stories'=>'Stories', 'nav_about'=>'Über uns', 'nav_gift'=>'Gutscheine', 'nav_shop'=>'Tickets', 'nav_cart'=>'Warenkorb', 'nav_newsletter'=>'Neuigkeiten', 'nav_account'=>'Mein Konto', 'newsletter_title'=>'Keinen Konzertabend verpassen', 'newsletter_intro'=>'Konzertankündigungen und Neuigkeiten aus unserem Wohnzimmer.', 'newsletter_button'=>'Nächsten Termin erfahren',
         'next'=>'Der nächste Abend', 'last'=>'Unser letzter Konzertabend', 'upcoming'=>'Bald im Wohnzimmer', 'past'=>'Rückblick', 'cancelled'=>'Konzert abgesagt',

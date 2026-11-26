@@ -75,7 +75,9 @@ add_filter('the_content','rl_content_posters',20);
 function rl_concert_media(int $id): void {
     $data=rl_editorial($id);
     if ($data['gallery']) {
-        echo '<section class="rl-photo-section" aria-label="'.esc_attr(rl_ui('gallery_title')).'"><h2>'.esc_html(rl_ui('gallery_title')).'</h2><div class="rl-photo-gallery">';
+        echo '<section class="rl-photo-section" aria-label="'.esc_attr(rl_ui('gallery_title')).'"><h2>'.esc_html(rl_ui('gallery_title')).'</h2><div class="rl-photo-gallery" data-rl-gallery';
+        foreach (['label'=>'gallery_title','close'=>'gallery_close','previous'=>'gallery_previous','next'=>'gallery_next','count'=>'gallery_count','original'=>'gallery_original','error'=>'gallery_error'] as $key=>$label) echo ' data-'.esc_attr($key).'="'.esc_attr(rl_ui($label)).'"';
+        echo '>';
         foreach ($data['gallery'] as $image) {
             if (!wp_attachment_is_image($image)) continue;
             echo '<figure><a href="'.esc_url(wp_get_attachment_url($image)).'" aria-label="'.esc_attr(rl_ui('photo_open').': '.(get_post_meta($image,'_wp_attachment_image_alt',true)?:get_the_title($image))).'">'.wp_get_attachment_image($image,'large',false,['loading'=>'lazy']).'</a>';
