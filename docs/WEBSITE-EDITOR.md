@@ -94,3 +94,23 @@ Das normale WooCommerce-Produkt bleibt die Grundlage: pro Konzert ein einfaches,
 - Aktuelle und vergangene Konzerte mit eigenen Bildern/Farben prüfen. Layoutreihenfolge, ausgeblendete Bereiche, Mobilansicht und rechtliche Links kontrollieren.
 
 Alle Gestaltungsänderungen sind Inhalte/Einstellungen der jeweiligen Website. Ein `git pull` aktualisiert den Code und überschreibt diese Einstellungen nicht. Das Plugin erzeugt weder echte Konzertdaten noch Zahlungskonten automatisch.
+
+## Konzerttexte und Medien ab Version 1.7
+
+Unter **Konzerte → Texte & Medien** stehen die Inhalte unabhängig vom klassischen oder Blockeditor bereit. In der Konzertliste führt die Zeilenaktion **Texte & Medien** direkt zum jeweiligen Abend. Im klassischen Konzerteditor führt zusätzlich der Hinweis unter dem Titel zur Box **Texte, Galerie & Video**. Dort können Redakteure unabhängig vom allgemeinen Design arbeiten:
+
+- **Kurzer Seitentitel / Untertitel:** optional, z. B. „Toby Beard“ und „Autumn Lights Tour · Wohnzimmerkonzert“. Der vollständige Beitragstitel, Permalink und bestehende Bestellungen bleiben erhalten. Ohne eigenen Seitentitel wird weiter der Beitragstitel ausgegeben.
+- **Ankündigung / Einleitung** und **Persönlicher Rückblick:** vor dem Termin erscheint die Einleitung, danach der Rückblick. Ohne Rückblick bleibt die Einleitung sichtbar. Der vorhandene große Inhaltseditor wird zusätzlich ausgegeben und nicht verändert. Dort bereits gespeicherte Videos bleiben erhalten.
+- **Titel / öffentlicher Hinweis der Infobox:** optional je Konzert und für alle Zustände dieses Konzerts; leere Felder verwenden die zum jeweiligen Zustand passenden allgemeinen Website-Texte.
+- **Fotogalerie:** mehrere Bilder aus der Mediathek hinzufügen, mit Pfeilen sortieren und einzeln entfernen. Die Bildunterschrift und der Alternativtext werden direkt am jeweiligen Medium gepflegt. Ein Klick auf ein Galeriefoto öffnet die volle Bildgröße.
+- **Video:** optional ein zusätzliches Video aus der eigenen Mediathek auswählen. Für bereits im Editor eingebettete Videos muss es hier nicht noch einmal hinzugefügt werden. Ein eigenes Vorschaubild ist möglich; andernfalls wird das aktuelle Konzertbild verwendet. Bereits vorhandene individuelle Poster bleiben erhalten. Fehlt jedes Konzertbild, wird die lokale Bühnenillustration verwendet. Es wird kein externer Videodienst benötigt.
+
+Die beiden Bilder unter **Gestaltung dieses Konzerts** bleiben Alternativen für vor/nach dem Termin. Eine Galerie ist davon unabhängig. Die technische Box „Individuelle Felder“ wird im klassischen Konzerteditor ausgeblendet; ihre gespeicherten Werte werden nicht gelöscht.
+
+Allgemeine Beschriftungen sind nun auch für die WordPress-Rolle **Redakteur** unter **Konzerte → Website-Texte** erreichbar. Diese Seite erlaubt ausschließlich Textänderungen. Gestaltung, rechtliche Links, Zahlungsdaten und Versandkonfiguration bleiben in den jeweiligen berechtigten Einstellungen.
+
+Unter **Einstellungen → Rommelfangen Concerts** kann die **Konzertstartseite für Logo und Sprunglinks** gewählt werden. Automatisch wird zuerst eine passende WordPress-Startseite, sonst die älteste veröffentlichte Seite mit `[rommelfangen_homepage]` verwendet. Bei mehreren Konzertstartseiten die gewünschte Seite ausdrücklich auswählen.
+
+Rückblicke haben ein eigenes Artikellayout mit kleinerer Überschrift, Datum/öffentlichem Ort, Fotos und Text. Einlass und die Kalenderaktion werden dort nicht mehr angeboten. Die weiterführende Aktion führt zur Konzertübersicht. Wenn der Newsletter-Bereich aktiviert ist, steht die Anmeldung zusätzlich direkt unter dem Konzertartikel.
+
+Im Footer wird eine konfigurierte Datenschutz-URL bevorzugt, ersatzweise die veröffentlichte WordPress-Datenschutzseite. Fehlende Links für Impressum und Datenschutz werden berechtigten Administratoren im Konzertbereich angezeigt. Es werden keine rechtlichen Inhalte oder Ziele erfunden. Ein Hinweis zeigt außerdem den WooCommerce-Modus „Demnächst verfügbar“ an. Die tatsächliche Veröffentlichung des Shops bleibt eine bewusste Betriebsentscheidung.

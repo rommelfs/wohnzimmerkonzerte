@@ -3,6 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 function rl_ui_defaults(): array {
     return [
+        'calendar_save'=>'Im Kalender speichern', 'review_box'=>'Dieser Konzertabend', 'review_newsletter'=>'Beim nächsten Abend dabei sein', 'gallery_title'=>'Bilder vom Konzert', 'photo_open'=>'Foto in voller Größe öffnen', 'video_download'=>'Video herunterladen',
         'skip'=>'Zum Inhalt', 'nav_upcoming'=>'Konzerte', 'nav_stories'=>'Stories', 'nav_about'=>'Über uns', 'nav_gift'=>'Gutscheine', 'nav_shop'=>'Tickets', 'nav_cart'=>'Warenkorb', 'nav_newsletter'=>'Neuigkeiten', 'nav_account'=>'Mein Konto', 'newsletter_title'=>'Keinen Konzertabend verpassen', 'newsletter_intro'=>'Konzertankündigungen und Neuigkeiten aus unserem Wohnzimmer.', 'newsletter_button'=>'Nächsten Termin erfahren',
         'next'=>'Der nächste Abend', 'last'=>'Unser letzter Konzertabend', 'upcoming'=>'Bald im Wohnzimmer', 'past'=>'Rückblick', 'cancelled'=>'Konzert abgesagt',
         'concert_button'=>'Konzert entdecken', 'past_button'=>'Diesen Abend entdecken', 'ticket_button'=>'Tickets buchen', 'all_concerts'=>'Alle Konzerte & Rückblicke',
@@ -49,7 +50,7 @@ function rl_site_defaults(): array {
     }
     return [
         'brand'=>'Rommelfangen', 'subtitle'=>'Living Room Concerts', 'logo_id'=>0, 'fallback_image_id'=>0,
-        'shop_page_id'=>0, 'commerce_shell'=>true, 'footer_text'=>'Ein Wohnzimmer. Musik. Und du mittendrin.', 'font'=>'serif', 'image_fit'=>'cover', 'hero_ratio'=>'4/5', 'photo_tilt'=>2, 'color_scheme'=>'dark', 'font_size'=>16, 'width'=>1240, 'radius'=>5, 'spacing'=>72,
+        'home_page_id'=>0, 'shop_page_id'=>0, 'commerce_shell'=>true, 'footer_text'=>'Ein Wohnzimmer. Musik. Und du mittendrin.', 'font'=>'serif', 'image_fit'=>'cover', 'hero_ratio'=>'4/5', 'photo_tilt'=>2, 'color_scheme'=>'dark', 'font_size'=>16, 'width'=>1240, 'radius'=>5, 'spacing'=>72,
         'colors'=>['bg'=>'#151918','surface'=>'#202725','ink'=>'#f5f1e9','muted'=>'#bfc7c1','accent'=>'#f5ac7b','button_text'=>'#1d201d','line'=>'#414a45'],
         'styles'=>[
             'upcoming'=>['background'=>'','color'=>'','accent'=>'','image_id'=>0,'layout'=>''],
@@ -92,6 +93,7 @@ function rl_sanitize_site($input): array {
     foreach (['brand','subtitle','footer_text','date_format'] as $key) $out[$key]=sanitize_text_field(is_string($input[$key] ?? null) ? $input[$key] : $d[$key]);
     foreach (['logo_id','fallback_image_id'] as $key) $out[$key]=rl_image_id($input[$key] ?? 0);
     $out['commerce_shell']=!empty($input['commerce_shell']);
+    $out['home_page_id']=is_scalar($input['home_page_id'] ?? null) ? absint($input['home_page_id']) : 0;
     $out['shop_page_id']=is_scalar($input['shop_page_id'] ?? null) ? absint($input['shop_page_id']) : 0;
     $out['font']=rl_safe_choice($input['font'] ?? '', ['serif','sans','mono'], 'serif');
     $out['image_fit']=rl_safe_choice($input['image_fit'] ?? '', ['cover','contain'], 'cover');

@@ -1,6 +1,6 @@
 # Arbeitskatalog nach Projektprüfung
 
-Ziel: zuverlässiger Betrieb kleiner Wohnzimmerkonzerte auf der bestehenden WordPress-/WooCommerce-Installation. Bestehende Inhalte und Einwilligungsnachweise bleiben erhalten. Der technische Zielumfang ist in Version 1.6 umgesetzt; reale Produktionsabnahmen und eigene redaktionelle Inhalte sind ausdrücklich davon getrennt.
+Ziel: zuverlässiger Betrieb kleiner Wohnzimmerkonzerte auf der bestehenden WordPress-/WooCommerce-Installation. Bestehende Inhalte und Einwilligungsnachweise bleiben erhalten. Der technische Zielumfang wurde in Version 1.6 umgesetzt und in Version 1.7 um die redaktionellen und visuellen Korrekturen aus der PDF-Prüfung ergänzt. Reale Produktionsabnahmen und eigene redaktionelle Inhalte bleiben davon getrennt.
 
 | Paket | Ziel / Abnahme | Stand und Nachweis |
 | --- | --- | --- |
@@ -53,3 +53,21 @@ Diese Abnahmen sind keine behaupteten erledigten Produktionsänderungen. Es werd
 ## Abschlussprüfung vom 25. November 2026
 
 Der vollständige Multisite-Verbundtest mit MariaDB, WordPress 7.0 und WooCommerce 11.3.1 bestand nach den Korrekturen einschließlich Einwilligungsmigration. Die sieben Auswahltests und die PHP-Syntaxprüfung bestanden ebenfalls. Zusätzlich wurden 26 Browserprüfungen auf Desktop und bei 390 Pixel Breite durchgeführt, darunter ein Warenkorb mit zwei Konzerten, Zahlungssimulation ohne externen Zahlungsaufruf, Einlass, CSV, Absage und sechs Anmeldungen über dieselbe IP. Die Testmail-Route wurde mit gültiger Anmeldung und abgewiesenem ungültigem Nonce geprüft. Die dafür angelegte Browser-Testwebsite wurde danach entfernt.
+
+## Redaktionelle und visuelle Nachprüfung vom 26. November 2026 (Version 1.7)
+
+Die beiden bereitgestellten PDFs haben weitere Lücken gezeigt. Die frühere technische Abnahme deckte die Auffindbarkeit redaktioneller Funktionen und die Wirkung echter Konzertinhalte nicht ausreichend ab. Dafür gelten jetzt zusätzliche Kriterien:
+
+| Paket | Ziel / Abnahme | Umsetzung |
+| --- | --- | --- |
+| E1 | Konzerttexte verständlich bearbeiten | Eigene Einleitung/Rückblick, kurzer Seitentitel/Untertitel und Infoboxtexte unter „Konzerte → Texte & Medien“, unabhängig vom gewählten WordPress-Editor; vorhandene Inhalte bleiben erhalten. Globale Texte auch für Redakteure unter „Konzerte → Website-Texte“. |
+| E2 | Mehrere Bilder und verständliche Statusbilder | Separate sortierbare Galerie mit Bildunterschriften und Links zur vollen Größe. Vorher-/Nachher-Bilder ausdrücklich als zeitabhängige Alternativen erklärt. |
+| E3 | Videovorschau ohne externen Dienst | Eigenes Poster bzw. Konzertbild als Ersatz; auch für vorhandene WordPress-Videos und Video-Playlists. Bestehende individuelle Poster bleiben erhalten. |
+| E4 | Vergangene Konzerte als Rückblick gestalten | Kleinere Überschrift, optionaler Touruntertitel, volle Artikelbreite, keine Kalender-/Einlassaktion und direkte Newsletter-Anmeldung. |
+| E5 | Navigation auf Konzertunterseite | Konfigurierbare/automatisch ermittelte Konzertstartseite für Logo und Sprunglinks; Konzertübersicht statt leerem Ticketshop als Rückblickziel. |
+| E6 | Rechtliche Links und Shopfreigabe sichtbar machen | Datenschutzseite als vorhandenes Ersatz-Ziel; Hinweise auf fehlende Links und aktiven WooCommerce-Modus „Demnächst verfügbar“. Keine automatische Live-Freigabe oder erfundene Rechtstexte. |
+| E7 | Redaktion von technischen Feldern entlasten | Doppelte technische Metadatenbox im klassischen Konzerteditor ausblenden, gespeicherte Werte erhalten. |
+
+`tests/editorial.php` prüft die zusätzlichen Text-/Medienabläufe, Eingabebereinigung, vorhandene Inhalte, private Adressen, Rechte und Unterseiten-Verlinkung. Der Multisite-Runner führt diese Prüfung zusätzlich zu den bisherigen Tests aus. Redaktionelle Texte, die Auswahl echter zusätzlicher Fotos und die bewusste Shopfreigabe werden auf der Live-Installation gepflegt; sie werden durch das Update nicht automatisch veröffentlicht.
+
+Abnahme dieser Runde: Der vollständige Multisite-Verbundtest bestand erneut einschließlich der zusätzlichen Integrationsprüfungen für Redaktion und Medien. Die Browserprüfung bestand mit 26 Prüfungen bei Desktop- und 390-Pixel-Mobilansicht, einschließlich tatsächlicher Video-Wiedergabe, Mediatheksauswahl, Galerie-Sortierung und Speichern als Redakteur. Fünf weitere Browserprüfungen bestätigten die Einbindung im Blockeditor, das Speichern im klassischen Editor sowie abgewiesene ungültige und anonyme Speicheranfragen. PHP-Syntax, JavaScript-Syntax und die sieben Auswahltests bestanden. Der Live-Zugriff lieferte am 26. November erneut HTTP 403; Live-Shopfreigabe und echte Inhalte werden dadurch nicht als geprüft behauptet.

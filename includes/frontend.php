@@ -90,7 +90,7 @@ function rl_section_button(array $section, string $fallback=''): void {
     $url=$section['button_url'] ?: $fallback;
     if ($section['button_label'] && $url) echo '<a class="button" href="'.esc_url(rl_nav_url($url)).'">'.esc_html($section['button_label']).'</a>';
 }
-function rl_nav_url(string $url): string { return str_starts_with($url,'#') ? home_url('/'.$url) : $url; }
+function rl_nav_url(string $url): string { return str_starts_with($url,'#') ? rl_concert_home_url().$url : $url; }
 
 add_filter('document_title_parts',function ($parts) {
     if (rl_is_ticket_shop()) $parts['title']=rl_ui('shop_title');

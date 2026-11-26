@@ -81,6 +81,9 @@ function rl_settings_page(): void {
     echo '<details open><summary>Marke & Erscheinungsbild</summary><div class="rl-fields">';
     foreach (['brand'=>'Name','subtitle'=>'Untertitel','footer_text'=>'Footer-Text'] as $key=>$label) rl_control('rl_site['.$key.']',$label,$site[$key]);
     rl_control('rl_site[date_format]','Datumsanzeige',$site['date_format'],'select',['d. F Y · H:i'=>'27. November 2026 · 19:30','d.m.Y · H:i'=>'27.11.2026 · 19:30','D, d.m.Y · H:i'=>'Fr, 27.11.2026 · 19:30']);
+    $homepages=[0=>'Konzertstartseite automatisch finden'];
+    foreach (get_pages(['post_status'=>'publish']) as $page) if (has_shortcode($page->post_content,'rommelfangen_homepage')) $homepages[$page->ID]=$page->post_title;
+    rl_control('rl_site[home_page_id]','Konzertstartseite für Logo und Sprunglinks',$site['home_page_id'],'select',$homepages);
     $pages=[0=>'Sofort verfügbaren Ticketshop verwenden'];
     foreach (get_pages(['post_status'=>'publish']) as $page) if (has_shortcode($page->post_content,'rommelfangen_tickets')) $pages[$page->ID]=$page->post_title;
     rl_control('rl_site[shop_page_id]','Ticketshop-Seite',$site['shop_page_id'],'select',$pages);

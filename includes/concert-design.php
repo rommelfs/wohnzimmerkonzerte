@@ -20,7 +20,7 @@ add_action('add_meta_boxes', function () {
     add_meta_box('rl_design','Gestaltung dieses Konzerts',function ($post) {
         wp_nonce_field('rl_save_design','rl_design_nonce');
         $saved=get_post_meta($post->ID,'rl_design',true); $saved=is_array($saved) ? $saved : [];
-        echo '<p>Leer lassen, um das Grunddesign der Website zu verwenden. Die Bilder gelten auch für Highlight und Konzertkarten. Das Beitragsbild ist der gemeinsame Standard, falls kein eigenes Statusbild gesetzt ist.</p><div class="rl-fields">';
+        echo '<p>Leer lassen, um das Grunddesign der Website zu verwenden. Die beiden Bilder sind Alternativen: Bis zum Beginn erscheint das Ankündigungsbild, danach das Rückblickbild. Beide werden nicht gleichzeitig angezeigt. Mehrere Fotos unter „Texte, Galerie & Video“ hinzufügen. Die Bilder gelten auch für Highlight und Konzertkarten. Das Beitragsbild ist der gemeinsame Standard, falls kein eigenes Statusbild gesetzt ist.</p><div class="rl-fields">';
         foreach (['upcoming'=>'Vor dem Konzert','past'=>'Nach dem Konzert / Rückblick'] as $status=>$label) {
             $value=array_replace(['background'=>'','color'=>'','accent'=>'','image_id'=>0,'layout'=>''], $saved[$status] ?? []);
             rl_control('rl_design['.$status.'][image_id]',$label.' · Bild',$value['image_id'],'image');
