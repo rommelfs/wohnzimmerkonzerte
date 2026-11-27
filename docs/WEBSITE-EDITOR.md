@@ -154,3 +154,9 @@ Die bisherige Höhenangabe bleibt gespeichert, wird aber erst verwendet, wenn un
 ## Größeres Konzertfoto auf der Startseite ab Version 1.9.3
 
 Im zweispaltigen Startseiten-Highlight teilen sich Foto und Text die verfügbare Breite gleichmäßig. Auch lange Konzerttitel drücken die Bildspalte nicht mehr zusammen. Die Konzertüberschrift wird dafür auf maximal 56 px begrenzt und kann bei Bedarf umbrechen. Bis 900 px Bildschirmbreite stehen Text und Foto untereinander. Die gewählte Bildausrichtung, das Seitenverhältnis und der Bildzuschnitt bleiben erhalten.
+
+## Größere Fotos bei Über uns und Rückblicken ab Version 1.9.4
+
+Im Bereich **Über uns** erhält das Foto im zweispaltigen Layout 60 Prozent des verfügbaren Spaltenplatzes, der Text 40 Prozent. Die Auswahl „Bild links / Text rechts“ und „Untereinander“ bleibt wirksam. Ohne Bild nutzt der Text die ganze Breite. Bis einschließlich 900 px werden Bild und Text untereinander dargestellt.
+
+Listen kommender und vergangener Konzerte verwenden höchstens so viele Spalten, wie tatsächlich Konzerte angezeigt werden. Ein einzelnes Konzert erscheint als breite Karte mit großem Foto und Text daneben; auf schmalen Bildschirmen stehen beide untereinander. Für das große Foto wird eine größere WordPress-Bildgröße angefordert. Die eingestellte Spaltenzahl bleibt für mehrere Konzerte die Obergrenze.

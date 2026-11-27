@@ -536,7 +536,11 @@ input,select,textarea {
   gap:3rem;
   align-items:center
 }
-.content-split.without-image {
+/* Give the hosts' photo more room while keeping the chosen order and stacked layout. */
+.rl-type-about.layout-split .content-split { grid-template-columns:minmax(0,2fr) minmax(0,3fr); }
+.rl-type-about.layout-image-first .content-split { grid-template-columns:minmax(0,3fr) minmax(0,2fr); }
+.content-split>* { min-width:0; }
+.rl-type-about .content-split.without-image,.content-split.without-image {
   grid-template-columns:1fr
 }
 .section-image img {
@@ -544,6 +548,11 @@ input,select,textarea {
   max-height:650px;
   object-fit:var(--image-fit,cover)
 }
+.grid.rl-single-concert { grid-template-columns:minmax(0,1fr); }
+.rl-single-concert .card { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); align-items:center; }
+.rl-single-concert .card>* { min-width:0; }
+.rl-single-concert .card-body { padding:clamp(1.5rem,3vw,3rem); overflow-wrap:anywhere; }
+.rl-single-concert .card-body h3 { font-size:clamp(1.75rem,3vw,2.75rem); }
 .section-banner {
   max-width:850px;
   margin-bottom:2rem
@@ -657,6 +666,9 @@ input,select,textarea {
   .layout-image-first .concert-content,.layout-image-first .ticket-box {
     order:initial
   }
+  .rl-type-about.layout-split .content-split,.rl-type-about.layout-image-first .content-split { grid-template-columns:1fr; }
+  .rl-type-about.layout-image-first .content-split>.prose,.rl-type-about.layout-image-first .section-image { order:initial; }
+  .rl-single-concert .card { grid-template-columns:1fr; }
   .content-split {
     gap:2rem
   }

@@ -41,9 +41,15 @@ $heading_count=0;
         <?php if ($section['image_id']): ?><div class="section-image"><?php rl_media((int)$section['image_id']); ?></div><?php endif; ?></div>
     <?php else: ?>
         <div class="section-intro"><?php rl_rich_text($section['body']); ?><?php if ($section['image_id']): ?><div class="section-banner"><?php rl_media((int)$section['image_id']); ?></div><?php endif; ?></div>
-        <div class="grid columns-<?php echo (int)$section['columns']; ?>">
-        <?php $items=[];
-        if ($type==='upcoming' || $type==='past') { $items=array_slice($type==='upcoming' ? $future : $past,0,(int)$section['limit']); foreach ($items as $event) rl_card($event['id'],$event['start']); }
+        <?php
+        $items=[];$concert_list=in_array($type,['upcoming','past'],true);
+        if ($concert_list) $items=array_slice($type==='upcoming' ? $future : $past,0,(int)$section['limit']);
+        $columns=$concert_list ? min((int)$section['columns'],max(1,count($items))) : (int)$section['columns'];
+        $single_concert=$concert_list && count($items)===1;
+        ?>
+        <div class="grid columns-<?php echo $columns; ?><?php echo $single_concert ? ' rl-single-concert' : ''; ?>">
+        <?php
+        if ($concert_list) { foreach ($items as $event) rl_card($event['id'],$event['start'],$single_concert ? 'large' : 'medium_large'); }
         elseif ($type==='stories') { $items=get_posts(['post_type'=>'post','numberposts'=>(int)$section['limit'],'post_status'=>'publish']); foreach ($items as $post_item) rl_card($post_item->ID); }
         elseif ($type==='testimonials') { $items=get_posts(['post_type'=>'rl_testimonial','numberposts'=>(int)$section['limit'],'post_status'=>'publish']); foreach ($items as $voice) echo '<figure><blockquote>'.wp_kses_post(wpautop($voice->post_content)).'</blockquote><figcaption>'.esc_html($voice->post_title).'</figcaption></figure>'; }
         ?></div>

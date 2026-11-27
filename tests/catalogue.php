@@ -17,6 +17,15 @@ try {
   $p=new WC_Product_Simple();$p->set_name($title);$p->set_status('publish');$p->set_virtual(true);$p->set_regular_price('20');$p->set_manage_stock(true);$p->set_stock_quantity($stock);$p->set_stock_status($stock?'instock':'outofstock');$p->set_backorders('no');$p->save();$products[]=$p;
   $id=wp_insert_post(['post_type'=>'rl_concert','post_status'=>'publish','post_title'=>$title]);$events[]=$id;update_post_meta($id,'rl_start',wp_date('Y-m-d\TH:i',time()+$delay));update_post_meta($id,'rl_product_id',$p->get_id());
  }
+ $only_test_events=static function ($query) use (&$events) { if ($query->get('post_type')==='rl_concert') $query->set('post__in',$events); };
+ add_action('pre_get_posts',$only_test_events);
+ $list_site=rl_site();$list_site['sections']=[rl_section_defaults('upcoming','list-test')];update_option('rl_site',$list_site);
+ $html=rl_render_home();rl_catalogue_expect(str_contains($html,'grid columns-2') && !str_contains($html,'rl-single-concert'),'Two concerts use two columns without reserving an empty third column');
+ update_post_meta($events[0],'rl_start',wp_date('Y-m-d\TH:i',time()-DAY_IN_SECONDS));$list_site['sections']=[rl_section_defaults('past','list-test')];update_option('rl_site',$list_site);
+ $html=rl_render_home();rl_catalogue_expect(str_contains($html,'grid columns-1 rl-single-concert') && str_contains($html,'Ausverkauft') && !str_contains($html,'Verfügbar'),'A single retrospective fills its section and retains the correct concert');
+ $list_site['sections']=[rl_section_defaults('upcoming','list-test')];update_option('rl_site',$list_site);$html=rl_render_home();rl_catalogue_expect(str_contains($html,'grid columns-1 rl-single-concert') && str_contains($html,'Verfügbar'),'A single upcoming concert receives the same full-width treatment');
+ update_post_meta($events[0],'rl_start',wp_date('Y-m-d\TH:i',time()+DAY_IN_SECONDS));$list_site['sections'][0]['columns']=1;update_option('rl_site',$list_site);$html=rl_render_home();rl_catalogue_expect(str_contains($html,'grid columns-1') && !str_contains($html,'rl-single-concert'),'The chosen one-column layout remains available for multiple concerts');
+ remove_action('pre_get_posts',$only_test_events);
  rl_catalogue_expect(rl_shop_selection(rl_shop_events())['id']===$events[1] && rl_shop_selection(rl_shop_events(),$events[0])['id']===$events[0],'General ticket link prefers a bookable concert; explicit sold-out selection is retained');
  rl_catalogue_expect(str_contains(rl_waitlist_form($events[0]),'keine Newsletter-Anmeldung') && rl_waitlist_form($events[1])==='','Sold-out concerts offer a separate waitlist without enrolling a newsletter');
  rl_waitlist_subscribe($events[0],'waiting@example.test');$records=rl_waitlist_records('waiting@example.test');$entry=$records[0]->ID;$entries[]=$entry;$mail=end($messages);
@@ -31,5 +40,6 @@ try {
  $erasers=apply_filters('wp_privacy_personal_data_erasers',[]);$erasers['rl-waitlist']['callback']('waiting@example.test');rl_catalogue_expect(!rl_waitlist_records('waiting@example.test'),'Waitlist privacy erasure removes its personal data');
  echo "Catalogue, homepage and waitlist checks passed.\n";
 } finally {
+ if(isset($only_test_events))remove_action('pre_get_posts',$only_test_events);
  remove_filter('pre_wp_mail',$capture,PHP_INT_MAX);foreach($entries as $id)wp_delete_post($id,true);foreach($events as $id)wp_delete_post($id,true);foreach($products as $p)$p->delete(true);if($original===null)delete_option('rl_site');else update_option('rl_site',$original);wp_clear_scheduled_hook('rl_waitlist_tick');if($original_layout===null)delete_option('rl_layout_version');else update_option('rl_layout_version',$original_layout);ob_end_flush();
 }

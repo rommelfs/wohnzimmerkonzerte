@@ -117,3 +117,11 @@ Lange Konzerttitel beanspruchten durch die Mindestbreite der CSS-Grid-Spalten zu
 Browser-Abnahme: Das Toby-Beard-Highlight wurde mit dem langen Originaltitel und Konzertfoto von 320 bis 1840 px geprüft: gleich breite Desktop-Spalten, einspaltige mobile Ansicht, kein horizontales Überlaufen, unverändertes Bildformat und keine JavaScript-Ausnahmen. Temporäre Inhalte und Einstellungen wurden anschließend entfernt beziehungsweise wiederhergestellt.
 
 Der vollständige WordPress-/WooCommerce-Multisite-Verbundtest sowie PHP-Syntaxprüfung und `git diff --check` bestanden ebenfalls.
+
+## Mehr Bildfläche bei Gastgebern und Rückblicken (Version 1.9.4)
+
+„Über uns“ teilt Bild und Text im Verhältnis 60:40 auf; Bildposition, gestapeltes Layout und Text ohne Bild bleiben unterstützt. Konzertlisten lassen keine leeren Spalten für fehlende Konzerte stehen. Ein einzelnes kommendes oder vergangenes Konzert nutzt eine breite Karte mit größerer WordPress-Bildgröße und Text neben dem Foto. Bis 900 px werden beide Bereiche einspaltig.
+
+Browserprüfung von 320 bis 1840 px: Bildgrößen, mobiles Stapeln, kein horizontales Überlaufen, umgekehrte Bildposition und gestapelte Gastgeberansicht bestanden. Temporäre Testinhalte wurden entfernt und ursprüngliche Einstellungen wiederhergestellt. Integrationstests prüfen ein beziehungsweise zwei Konzerte, die Trennung kommender und vergangener Termine sowie die Beibehaltung einer ausdrücklich gewählten einspaltigen Liste.
+
+Abnahme: vollständiger WordPress-/WooCommerce-Multisite-Verbundtest einschließlich der neuen Listenfälle sowie PHP-Syntaxprüfung und `git diff --check` bestanden.

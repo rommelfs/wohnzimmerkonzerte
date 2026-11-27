@@ -21,11 +21,11 @@ function rl_style_attributes(array $style): string {
     }
     return implode(';',$css);
 }
-function rl_card(int $id, int $timestamp=0): void {
+function rl_card(int $id, int $timestamp=0, string $image_size='medium_large'): void {
     $style=get_post_type($id)==='rl_concert' ? rl_concert_style($id) : [];
     if (!$timestamp && get_post_type($id)==='rl_concert') $timestamp=rl_timestamp((string)get_post_meta($id,'rl_start',true));
     ?>
-    <article class="card rl-themed" style="<?php echo esc_attr(rl_style_attributes($style)); ?>"><a class="image" tabindex="-1" aria-hidden="true" href="<?php echo esc_url(get_permalink($id)); ?>"><?php rl_image($id,'medium_large'); ?></a>
+    <article class="card rl-themed" style="<?php echo esc_attr(rl_style_attributes($style)); ?>"><a class="image" tabindex="-1" aria-hidden="true" href="<?php echo esc_url(get_permalink($id)); ?>"><?php rl_image($id,$image_size); ?></a>
     <div class="card-body"><p class="eyebrow"><?php echo $timestamp ? esc_html(rl_date($timestamp)) : esc_html(get_the_date('', $id)); ?></p>
     <h3><a href="<?php echo esc_url(get_permalink($id)); ?>"><?php echo esc_html(get_the_title($id)); ?></a></h3><p><?php echo esc_html(get_the_excerpt($id)); ?></p></div></article>
     <?php
