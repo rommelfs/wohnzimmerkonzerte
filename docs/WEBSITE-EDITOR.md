@@ -150,3 +150,7 @@ Für die horizontale Logo-Variante bieten sich ab Version 1.9.2 etwa 400–440 p
 Zuvor konnten sich maximale Breite und maximale Höhe gegenseitig begrenzen. Ein horizontaler Entwurf mit etwa 3:1 Seitenverhältnis wurde bei 110 px maximaler Höhe nur rund 330 px breit, auch wenn 480 px Breite eingestellt waren. Jetzt legt die Breite die Bildgröße fest; die Höhe wird proportional berechnet. Die einstellbare Kopfbereich-Breite reicht bis 640 px. Die Footer-Breite ist unabhängig von der Header-Breite. Auf Smartphones gilt weiterhin der eigene Breitenwert, begrenzt durch den verfügbaren Platz.
 
 Die bisherige Höhenangabe bleibt gespeichert, wird aber erst verwendet, wenn unter **Optionale Höhenbegrenzung** die Checkbox **Logo-Höhe zusätzlich begrenzen** aktiviert ist. Der Erklärungstext weist darauf hin, dass diese Begrenzung auch die sichtbare Breite verkleinern kann. Logo-Dateien, Darstellungsmodus und Menüabstand werden durch das Update nicht geändert.
+
+## Größeres Konzertfoto auf der Startseite ab Version 1.9.3
+
+Im zweispaltigen Startseiten-Highlight teilen sich Foto und Text die verfügbare Breite gleichmäßig. Auch lange Konzerttitel drücken die Bildspalte nicht mehr zusammen. Die Konzertüberschrift wird dafür auf maximal 56 px begrenzt und kann bei Bedarf umbrechen. Bis 900 px Bildschirmbreite stehen Text und Foto untereinander. Die gewählte Bildausrichtung, das Seitenverhältnis und der Bildzuschnitt bleiben erhalten.

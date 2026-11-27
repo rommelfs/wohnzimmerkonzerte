@@ -17,7 +17,7 @@ $heading_count=0;
         if ($concert_style['layout']) $layout=$concert_style['layout'];
     }
 ?>
-<section id="<?php echo esc_attr($section['id']); ?>" class="rl-section section rl-themed rl-type-<?php echo esc_attr($type); ?> layout-<?php echo esc_attr($layout); ?>" style="<?php echo esc_attr(rl_style_attributes($style)); ?>"><div class="wrap">
+<section id="<?php echo esc_attr($section['id']); ?>" class="rl-section section rl-themed rl-type-<?php echo esc_attr($type); ?><?php echo $type==='hero' && $highlight ? ' rl-has-highlight' : ''; ?> layout-<?php echo esc_attr($layout); ?>" style="<?php echo esc_attr(rl_style_attributes($style)); ?>"><div class="wrap">
 <?php if ($type==='hero'): ?>
     <div class="hero"><div class="hero-copy"><p class="eyebrow"><?php echo esc_html($section['eyebrow']); ?></p>
     <?php if ($highlight): $id=$highlight['id']; $upcoming=$highlight['start']>=time(); ?>

@@ -109,3 +109,11 @@ Reproduziert: 480 px gewünschte Breite ergaben durch eine gleichzeitig gespeich
 Die Browserprüfung misst tatsächliche Bildbreiten nach Änderungen und nach Speichern über die WordPress-Oberfläche sowie die unabhängig wachsende Footer-Breite. Responsive Ansichten und die ausdrücklich aktivierte Höhenbegrenzung werden separat geprüft. Bilddateien und Menüabstand bleiben erhalten.
 
 Abnahme: vollständiger Multisite-Verbundtest, PHP-Syntax und Größenprüfungen im echten Browser bestanden. Gemessen wurden unter anderem 480 px tatsächliche Breite bei einem alten gespeicherten 110-px-Höhenwert, geänderte Breiten über das WordPress-Formular, unabhängige Footer-Größe, mobile Ansichten bis 320 px und die bewusst aktivierte Höhenbegrenzung. Testbilder und temporäre Website-Einstellungen wurden anschließend entfernt bzw. wiederhergestellt.
+
+## Größeres Konzertfoto im Startseiten-Highlight (Version 1.9.3)
+
+Lange Konzerttitel beanspruchten durch die Mindestbreite der CSS-Grid-Spalten zu viel Platz und verkleinerten das Konzertfoto. Beide Spalten erhalten nun gleich viel Platz; die Konzertüberschrift ist auf maximal 56 px begrenzt. Unterhalb einschließlich 900 px stehen Text und Foto untereinander. Die konfigurierten Bildformate und Zuschnitte bleiben wirksam.
+
+Browser-Abnahme: Das Toby-Beard-Highlight wurde mit dem langen Originaltitel und Konzertfoto von 320 bis 1840 px geprüft: gleich breite Desktop-Spalten, einspaltige mobile Ansicht, kein horizontales Überlaufen, unverändertes Bildformat und keine JavaScript-Ausnahmen. Temporäre Inhalte und Einstellungen wurden anschließend entfernt beziehungsweise wiederhergestellt.
+
+Der vollständige WordPress-/WooCommerce-Multisite-Verbundtest sowie PHP-Syntaxprüfung und `git diff --check` bestanden ebenfalls.

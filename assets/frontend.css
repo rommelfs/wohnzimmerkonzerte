@@ -96,11 +96,14 @@ nav a {
 }
 .hero {
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:4rem;
   padding-block:5rem;
   align-items:center
 }
+.hero-copy,.hero-visual { min-width:0; }
+.hero-copy { overflow-wrap:anywhere; }
+.rl-has-highlight .hero-copy h1,.rl-has-highlight .hero-copy h2 { font-size:clamp(2rem,4vw,3.5rem); line-height:1.12; }
 .eyebrow {
   text-transform:uppercase;
   letter-spacing:.14em;
@@ -392,8 +395,10 @@ input,select,textarea {
     width:calc(100% - 3rem)
   }
   .hero {
-    gap:2rem
+    gap:2rem;
+    grid-template-columns:1fr
   }
+  .rl-type-hero.layout-image-first .hero-copy,.rl-type-hero.layout-image-first .hero-visual { order:initial; }
   .grid {
     grid-template-columns:repeat(2,minmax(0,1fr))
   }
